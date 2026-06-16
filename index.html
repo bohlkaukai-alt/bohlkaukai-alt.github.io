@@ -21,9 +21,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 
-
     <style>
-         :root {
+        :root {
             --bg: #F0F2F5;
             --surface: #FFFFFF;
             --surface2: #F8F9FA;
@@ -98,13 +97,13 @@
             overflow: hidden;
         }
         
-        @media (min-width:768px) {
+        @media (min-width: 768px) {
             #app {
                 max-width: 768px;
             }
         }
+
         /* ── Header ── */
-        
         .app-header {
             background: var(--surface);
             padding: 14px 18px;
@@ -170,8 +169,8 @@
         .location-pill .material-icons-round {
             font-size: 16px;
         }
+
         /* ── Nav ── */
-        
         .bottom-nav {
             background: var(--surface);
             display: flex;
@@ -244,8 +243,8 @@
             z-index: 0;
             box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
         }
+
         /* ── Main Content ── */
-        
         .main-content {
             flex: 1;
             overflow-y: auto;
@@ -260,8 +259,8 @@
             height: 100%;
             width: 100%;
         }
+
         /* ── Cards ── */
-        
         .card {
             background: var(--surface);
             border-radius: var(--radius);
@@ -292,8 +291,8 @@
         .card:active {
             transform: translateY(0);
         }
+
         /* ── Job Card ── */
-        
         .job-card-header {
             display: flex;
             justify-content: space-between;
@@ -354,8 +353,8 @@
             font-weight: 700;
             font-size: 13px;
         }
+
         /* ── Skeleton ── */
-        
         .skeleton {
             background: linear-gradient(90deg, var(--border) 25%, var(--surface2) 50%, var(--border) 75%);
             background-size: 200% 100%;
@@ -365,10 +364,10 @@
         
         @keyframes shimmer {
             0% {
-                background-position: 200% 0
+                background-position: 200% 0;
             }
             100% {
-                background-position: -200% 0
+                background-position: -200% 0;
             }
         }
         
@@ -396,8 +395,8 @@
         .skeleton-line.full {
             width: 100%;
         }
+
         /* ── Buttons ── */
-        
         .btn {
             padding: 13px 20px;
             border-radius: 25px;
@@ -473,8 +472,8 @@
             margin-top: 0;
             border-radius: 20px;
         }
+
         /* ── Form ── */
-        
         .form-input {
             width: 100%;
             padding: 13px 16px;
@@ -508,8 +507,8 @@
         .form-group {
             margin-bottom: 4px;
         }
+
         /* ── Toggle Switch ── */
-        
         .toggle-wrap {
             display: flex;
             background: var(--surface2);
@@ -542,8 +541,8 @@
             box-shadow: 0 3px 10px rgba(79, 70, 229, 0.35);
             border-radius: 25px;
         }
+
         /* ── Filter Chips ── */
-        
         .filter-scroll {
             display: flex;
             gap: 8px;
@@ -576,8 +575,8 @@
             border-color: var(--primary);
             box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
         }
+
         /* ── Toast ── */
-        
         .toast {
             position: fixed;
             bottom: 90px;
@@ -602,15 +601,15 @@
         @keyframes toastIn {
             from {
                 opacity: 0;
-                transform: translateX(-50%) translateY(20px)
+                transform: translateX(-50%) translateY(20px);
             }
             to {
                 opacity: 1;
-                transform: translateX(-50%) translateY(0)
+                transform: translateX(-50%) translateY(0);
             }
         }
+
         /* ── Modal ── */
-        
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -625,10 +624,10 @@
         
         @keyframes fadeIn {
             from {
-                opacity: 0
+                opacity: 0;
             }
             to {
-                opacity: 1
+                opacity: 1;
             }
         }
         
@@ -645,10 +644,10 @@
         
         @keyframes slideUp {
             from {
-                transform: translateY(100%)
+                transform: translateY(100%);
             }
             to {
-                transform: translateY(0)
+                transform: translateY(0);
             }
         }
         
@@ -667,8 +666,8 @@
             border-bottom: 1px solid var(--border);
             margin-bottom: 12px;
         }
+
         /* ── Profile ── */
-        
         .profile-avatar {
             width: 80px;
             height: 80px;
@@ -682,8 +681,8 @@
             font-weight: 800;
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
         }
+
         /* ── Map Controls ── */
-        
         .map-fab {
             background: var(--surface);
             border-radius: 50%;
@@ -726,8 +725,8 @@
             font-size: 20px;
             color: var(--primary);
         }
+
         /* ── Category item ── */
-        
         .cat-item {
             padding: 14px 20px;
             border-bottom: 1px solid var(--border);
@@ -757,8 +756,8 @@
         .cat-item.selected .material-icons-round {
             color: var(--primary);
         }
+
         /* ── Status badges ── */
-        
         .status-badge {
             display: inline-flex;
             align-items: center;
@@ -785,8 +784,8 @@
             background: var(--border);
             color: var(--text2);
         }
+
         /* ── gmap pin ── */
-        
         .gmap-pin {
             width: 38px;
             height: 38px;
@@ -803,8 +802,8 @@
             transform: rotate(45deg);
             font-size: 18px;
         }
+
         /* ── Empty state ── */
-        
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -827,8 +826,8 @@
             font-size: 13px;
             line-height: 1.6;
         }
+
         /* ── Section header ── */
-        
         .section-header {
             padding: 12px 14px 4px;
             display: flex;
@@ -847,8 +846,8 @@
             color: var(--text2);
             font-weight: 600;
         }
+
         /* ── Chat ── */
-        
         .chat-bubble {
             max-width: 78%;
             padding: 10px 14px;
@@ -877,8 +876,8 @@
             color: var(--text2);
             margin-top: 3px;
         }
+
         /* ── Settings item ── */
-        
         .setting-row {
             display: flex;
             justify-content: space-between;
@@ -921,8 +920,8 @@
             align-items: center;
             gap: 4px;
         }
+
         /* ── Tutorial ── */
-        
         .tutorial-overlay {
             position: fixed;
             inset: 0;
@@ -948,11 +947,11 @@
         @keyframes popIn {
             from {
                 opacity: 0;
-                transform: scale(0.85)
+                transform: scale(0.85);
             }
             to {
                 opacity: 1;
-                transform: scale(1)
+                transform: scale(1);
             }
         }
         
@@ -998,12 +997,101 @@
         .tutorial-nav {
             display: flex;
             gap: 10px;
+            padding: 0 20px;
+        }
+        
+        .tutorial-nav .btn {
+            flex: 1;
+            margin: 0;
+            margin-top: 8px;
         }
     </style>
 </head>
 
 <body>
-    <div id="app"></div>
+    <div id="app">
+        <div class="app-header">
+            <button class="back-arrow" id="backBtn">
+                <span class="material-icons-round">arrow_back</span>
+            </button>
+            <h1>MiniJob</h1>
+            <div class="location-pill" id="locationPill">
+                <span class="material-icons-round">location_on</span>
+                <span id="locationText">Standort</span>
+            </div>
+        </div>
+
+        <div class="main-content" id="mainContent">
+            <!-- Content will be rendered here -->
+        </div>
+
+        <nav class="bottom-nav">
+            <button class="nav-item active" id="navJobs">
+                <span class="material-icons-round">work</span>
+                <span>Jobs</span>
+            </button>
+            <button class="nav-item" id="navMap">
+                <span class="material-icons-round">map</span>
+                <span>Karte</span>
+            </button>
+            <button class="nav-item" id="navChat">
+                <span class="material-icons-round">chat</span>
+                <span>Chat</span>
+                <span class="badge" id="chatBadge">3</span>
+            </button>
+            <button class="nav-item" id="navProfile">
+                <span class="material-icons-round">person</span>
+                <span>Profil</span>
+            </button>
+            <div class="nav-indicator"></div>
+        </nav>
+    </div>
+
+    <script>
+        // Basic app initialization
+        console.log('MiniJob Finder loaded');
+        
+        // Navigation setup
+        const navItems = document.querySelectorAll('.nav-item');
+        const navIndicator = document.querySelector('.nav-indicator');
+        
+        function updateNavIndicator(activeItem) {
+            const index = Array.from(navItems).indexOf(activeItem);
+            const itemWidth = activeItem.offsetWidth;
+            const itemLeft = activeItem.offsetLeft;
+            navIndicator.style.left = itemLeft + 'px';
+            navIndicator.style.width = itemWidth + 'px';
+        }
+        
+        navItems.forEach((item) => {
+            item.addEventListener('click', function() {
+                navItems.forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+                updateNavIndicator(this);
+            });
+        });
+        
+        // Initialize indicator on load
+        window.addEventListener('load', () => {
+            const activeItem = document.querySelector('.nav-item.active');
+            if (activeItem) {
+                updateNavIndicator(activeItem);
+            }
+        });
+        
+        // Dark mode toggle
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark-mode');
+        }
+        
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            if (e.matches) {
+                document.documentElement.classList.add('dark-mode');
+            } else {
+                document.documentElement.classList.remove('dark-mode');
+            }
+        });
+    </script>
 </body>
 
 </html>
