@@ -2908,7 +2908,7 @@
             tutorialActive = false;
         }
 
-        function waitForElement(selector, timeout = 8000) {
+        function waitForElement(selector, timeout = 4000) {
             return new Promise((resolve, reject) => {
                 const start = Date.now();
                 const check = () => {
@@ -2934,7 +2934,7 @@
 
             if (currentPage !== step.page) {
                 navigateTo(step.page);
-                await new Promise(r => setTimeout(r, 500));
+                await new Promise(r => setTimeout(r, 200));
             }
 
             let targetEl;
