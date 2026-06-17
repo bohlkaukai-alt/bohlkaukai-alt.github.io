@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datenschutzerklärung – MiniJob Finder</title>
+    <meta name="theme-color" content="#2563EB">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <script>
+        (function () {
+            try {
+                var theme = localStorage.getItem('app_theme') || 'light';
+                document.documentElement.setAttribute('data-theme', theme);
+                document.addEventListener('DOMContentLoaded', function () {
+                    document.body.setAttribute('data-theme', theme);
+                });
+            } catch (e) {}
+        })();
+    </script>
+</head>
+<body data-theme="light" data-device="desktop">
+<main class="legal-page">
+    <section class="legal-card">
+        <a class="legal-back" href="index.html">← Zurück zur App</a>
+
+        <h1>Datenschutzerklärung</h1>
+        <p class="small-muted">Stand: 17.06.2026</p>
+
+        <p>
+            Diese Datenschutzerklärung informiert darüber, welche personenbezogenen Daten bei der Nutzung der
+            Web-App <strong>MiniJob Finder</strong> verarbeitet werden, zu welchen Zwecken dies geschieht und welche
+            Rechte Nutzerinnen und Nutzer nach der Datenschutz-Grundverordnung (DSGVO) haben.
+        </p>
+
+        <p>
+            <strong>Wichtig:</strong> Diese Datenschutzerklärung ist eine auf diese Website zugeschnittene Vorlage.
+            Für eine echte öffentliche Veröffentlichung müssen die Betreiberangaben ergänzt und die Erklärung
+            rechtlich geprüft werden. Besonders bei minderjährigen Nutzern, Standortdaten, Chat-Funktionen und
+            Firebase-Nutzung sollte eine fachliche Prüfung erfolgen.
+        </p>
+
+        <h2>1. Verantwortlicher</h2>
+        <p>
+            Verantwortlich für die Verarbeitung personenbezogener Daten im Sinne der DSGVO ist der Betreiber dieser
+            Website.
+        </p>
+        <p><strong>Bitte vor Veröffentlichung ergänzen:</strong></p>
+        <ul>
+            <li>Name / Organisation: ______________________________</li>
+            <li>Adresse: ______________________________</li>
+            <li>E-Mail: ______________________________</li>
+            <li>Telefon, falls gewünscht: ______________________________</li>
+        </ul>
+
+        <h2>2. Datenschutzbeauftragter</h2>
+        <p>
+            Ein Datenschutzbeauftragter ist nur erforderlich, wenn dies gesetzlich vorgeschrieben ist, z. B. wegen
+            Art, Umfang oder Zweck der Datenverarbeitung. Falls ein Datenschutzbeauftragter benannt wurde, sind hier
+            die Kontaktdaten einzutragen:
+        </p>
+        <ul>
+            <li>Datenschutzbeauftragter: ______________________________</li>
+            <li>E-Mail: ______________________________</li>
+        </ul>
+
+        <h2>3. Allgemeine Rechtsgrundlagen</h2>
+        <p>Die Verarbeitung personenbezogener Daten erfolgt je nach Funktion auf Grundlage von:</p>
+        <ul>
+            <li><strong>Art. 6 Abs. 1 lit. a DSGVO</strong> – Einwilligung, z. B. Standortfreigabe oder optionale Speicherung.</li>
+            <li><strong>Art. 6 Abs. 1 lit. b DSGVO</strong> – Vertragserfüllung bzw. vorvertragliche Maßnahmen, z. B. Registrierung, Login, Job-Anzeigen und Chat.</li>
+            <li><strong>Art. 6 Abs. 1 lit. f DSGVO</strong> – berechtigtes Interesse, z. B. Sicherheit, Missbrauchsschutz, Fehlerbehebung und technische Stabilität.</li>
+            <li><strong>Art. 6 Abs. 1 lit. c DSGVO</strong> – rechtliche Verpflichtungen, falls Aufbewahrungs- oder Auskunftspflichten bestehen.</li>
+        </ul>
+
+        <h2>4. Registrierung und Benutzerkonto</h2>
+        <p>
+            Für die Nutzung der App ist ein Benutzerkonto erforderlich. Bei der Registrierung werden folgende Daten
+            verarbeitet:
+        </p>
+        <ul>
+            <li>Name bzw. Anzeigename</li>
+            <li>E-Mail-Adresse</li>
+            <li>Passwort zur Anmeldung</li>
+            <li>Geburtsdatum bzw. daraus berechnetes Alter</li>
+            <li>Wohnort, sofern angegeben</li>
+            <li>technische Nutzer-ID von Firebase</li>
+            <li>Zeitpunkt der Zustimmung zur Datenschutzerklärung</li>
+        </ul>
+
+        <p>
+            Die E-Mail-Adresse wird für die Anmeldung und Zuordnung des Benutzerkontos verwendet. Das Passwort wird
+            über <strong>Firebase Authentication</strong> verarbeitet. Es wird von dieser Website nicht im Klartext
+            gespeichert und nicht in der Firestore-Datenbank als lesbarer Wert abgelegt. Die technische
+            Authentifizierung erfolgt über Firebase Authentication.
+        </p>
+
+        <p>
+            Zusätzlich können Profildaten in <strong>Cloud Firestore</strong> gespeichert werden, z. B. Name,
+            E-Mail-Adresse, Alter, Wohnort, Profilfarbe, Bio und Einstellungen.
+        </p>
+
+        <h2>5. Mindestalter</h2>
+        <p>
+            Die Registrierung ist erst ab 13 Jahren vorgesehen. Das Geburtsdatum wird genutzt, um das Mindestalter zu
+            prüfen. Je nach Einsatz der App können zusätzliche Einwilligungen der Erziehungsberechtigten erforderlich
+            sein, insbesondere wenn die App durch Minderjährige genutzt wird.
+        </p>
+
+        <h2>6. Job-Anzeigen</h2>
+        <p>Wenn Nutzer Job-Anzeigen erstellen oder bearbeiten, können folgende Daten verarbeitet werden:</p>
+        <ul>
+            <li>Titel der Anzeige</li>
+            <li>Kategorie</li>
+            <li>Beschreibung</li>
+            <li>Ort bzw. Adresse</li>
+            <li>Koordinaten des angegebenen Ortes</li>
+            <li>Bezahlung</li>
+            <li>Status der Anzeige, z. B. offen, reserviert oder erledigt</li>
+            <li>Ersteller-ID und Erstellername</li>
+            <li>Aufrufzähler und technische Metadaten</li>
+        </ul>
+        <p>
+            Diese Daten werden verarbeitet, damit andere Nutzer passende MiniJobs finden, kontaktieren und anzeigen
+            können.
+        </p>
+
+        <h2>7. Standortdaten und Kartenfunktion</h2>
+        <p>
+            Die App kann den Standort des Nutzers verwenden, um Jobs in der Nähe anzuzeigen und Entfernungen zu
+            berechnen. Der genaue Standort wird nur abgefragt, wenn der Nutzer im Browser oder Gerät die
+            Standortfreigabe erlaubt.
+        </p>
+        <p>
+            Standortdaten können lokal im Browser gespeichert werden, damit der Standort nicht bei jedem Seitenaufruf
+            neu abgefragt werden muss. Diese lokale Speicherung kann in der App unter
+            <strong>Profil → Einstellungen → Cookies & Speicher</strong> deaktiviert oder gelöscht werden.
+        </p>
+        <p>
+            Für Karten und Geocoding werden <strong>Leaflet</strong>, <strong>OpenStreetMap</strong> und
+            <strong>Nominatim</strong> genutzt. Dabei können eingegebene Orte, Adressen, Koordinaten und technische
+            Zugriffsdaten an diese Dienste übermittelt werden.
+        </p>
+
+        <h2>8. Chat-Funktion</h2>
+        <p>
+            Die App enthält eine Chat-Funktion zwischen Nutzern. Dabei können folgende Daten verarbeitet werden:
+        </p>
+        <ul>
+            <li>Chat-Teilnehmer</li>
+            <li>Nachrichteninhalte</li>
+            <li>Zeitpunkt der Nachrichten</li>
+            <li>Job-Bezug des Chats</li>
+            <li>Lesestatus bzw. ungelesene Nachrichten</li>
+            <li>optionale Meldungen von Chats oder Nachrichten</li>
+        </ul>
+        <p>
+            Chat-Inhalte werden in Firebase / Firestore gespeichert, damit Unterhaltungen angezeigt und synchronisiert
+            werden können. Nutzer sollten keine sensiblen Daten im Chat teilen.
+        </p>
+
+        <h2>9. Bewertungen, Meldungen und Admin-Funktionen</h2>
+        <p>
+            Wenn Bewertungen oder Meldungen genutzt werden, können Bewertungswerte, Texte, betroffene Nutzer,
+            betroffene Jobs oder Chats, Zeitpunkte und technische IDs gespeichert werden. Diese Daten dienen der
+            Vertrauensbildung, Qualitätssicherung und Missbrauchsprüfung.
+        </p>
+        <p>
+            Für bestimmte E-Mail-Adressen kann ein Admin-Modus vorgesehen sein. Admins können, je nach Umsetzung,
+            Meldungen einsehen oder Inhalte prüfen.
+        </p>
+
+        <h2>10. Firebase und Google als Auftragsverarbeiter</h2>
+        <p>
+            Diese App nutzt Firebase-Dienste von Google, insbesondere:
+        </p>
+        <ul>
+            <li><strong>Firebase Authentication</strong> für Registrierung, Login und Passwortverarbeitung</li>
+            <li><strong>Cloud Firestore</strong> für Benutzerprofile, Jobs, Chats, Bewertungen und Meldungen</li>
+            <li>gegebenenfalls Firebase Hosting/weitere Firebase-Funktionen, falls später ergänzt</li>
+        </ul>
+        <p>
+            Anbieter ist Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland. Je nach Dienst und
+            Konfiguration können Daten auch durch Google LLC oder andere Google-Unternehmen verarbeitet werden.
+        </p>
+        <p>
+            Beim Einsatz von Firebase ist der Betreiber dieser App grundsätzlich Verantwortlicher und Google handelt
+            für viele Firebase-Dienste als Auftragsverarbeiter. Der Betreiber muss dafür die jeweils erforderlichen
+            Datenschutzbedingungen bzw. Auftragsverarbeitungsbedingungen mit Google/Firebase akzeptieren.
+        </p>
+        <p>
+            Eine Übermittlung personenbezogener Daten in Drittländer, insbesondere die USA, kann nicht ausgeschlossen
+            werden. Google stellt hierfür nach eigenen Angaben Datenschutz- und Sicherheitsbedingungen sowie
+            Übermittlungsmechanismen bereit. Der Betreiber muss prüfen, ob die gewählte Firebase-Konfiguration für den
+            konkreten Einsatz DSGVO-konform ist.
+        </p>
+
+        <h2>11. Hosting über GitHub Pages</h2>
+        <p>
+            Die statischen Dateien der App können über GitHub Pages bereitgestellt werden. Beim Aufruf der Website
+            verarbeitet GitHub technische Zugriffsdaten, z. B. IP-Adresse, Zeitpunkt des Zugriffs, Browserdaten und
+            angeforderte Dateien. Anbieter ist GitHub, Inc. bzw. GitHub B.V. / GitHub-Unternehmen, je nach Region und
+            Vertragsverhältnis.
+        </p>
+
+        <h2>12. Cookies, localStorage und ähnliche Technologien</h2>
+        <p>
+            Die App verwendet keine Werbe-Cookies. Sie nutzt jedoch lokale Speichertechniken des Browsers,
+            insbesondere <strong>localStorage</strong>, um App-Einstellungen zu speichern.
+        </p>
+
+        <h3>12.1 Notwendige Speicherung</h3>
+        <p>
+            Bestimmte Speicherungen sind für Anmeldung, Sicherheit und Grundfunktionen notwendig. Dazu gehören
+            insbesondere Firebase-Authentifizierungsdaten und technische Sitzungsdaten.
+        </p>
+
+        <h3>12.2 Optionale Speicherung</h3>
+        <p>Optionale Speicherung kann z. B. betreffen:</p>
+        <ul>
+            <li>Dark Mode</li>
+            <li>Geräteauswahl</li>
+            <li>Tutorial-Status</li>
+            <li>Sound- und Benachrichtigungseinstellungen</li>
+            <li>eigene Kategorien</li>
+            <li>gespeicherter Standort</li>
+            <li>Radius- und Filtereinstellungen</li>
+        </ul>
+        <p>
+            Optionale Speicherung kann in der App unter
+            <strong>Profil → Einstellungen → Cookies & Speicher</strong> jederzeit deaktiviert und gelöscht werden.
+        </p>
+
+        <h2>13. Progressive Web App und Service Worker</h2>
+        <p>
+            Die App kann als Progressive Web App installiert werden. Dafür können ein Manifest und ein Service Worker
+            genutzt werden. Der Service Worker kann Dateien zwischenspeichern, damit die App schneller lädt oder
+            teilweise offline nutzbar ist. Diese Speicherung kann über Browserdaten löschen oder durch Entfernen der
+            Website-Daten im Browser gelöscht werden.
+        </p>
+
+        <h2>14. Speicherdauer</h2>
+        <p>
+            Personenbezogene Daten werden nur so lange gespeichert, wie sie für die jeweiligen Zwecke erforderlich
+            sind. Ein Benutzerkonto und damit verbundene Profildaten bleiben grundsätzlich gespeichert, bis der Nutzer
+            den Account löscht oder eine Löschung verlangt.
+        </p>
+        <p>
+            Jobs, Chats, Bewertungen und Meldungen können je nach Funktion auch nach einzelnen Aktionen erhalten
+            bleiben, z. B. zur Nachvollziehbarkeit oder Missbrauchsprüfung. Für eine produktive Version sollte eine
+            klare Lösch- und Aufbewahrungsroutine festgelegt werden.
+        </p>
+
+        <h2>15. Account löschen und Daten löschen</h2>
+        <p>
+            Nutzer können ihren Account unter <strong>Profil → Einstellungen → Account löschen</strong> löschen.
+            Dabei wird versucht, das Firebase-Login-Konto und das Nutzerprofil zu löschen. Firebase kann aus
+            Sicherheitsgründen verlangen, dass sich der Nutzer vorher erneut anmeldet.
+        </p>
+        <p>
+            Zusätzlich können Nutzer die Löschung weiterer personenbezogener Daten verlangen. Eine vollständige
+            produktive Löschung sollte serverseitig umgesetzt werden, damit auch verknüpfte Inhalte wie Jobs, Chats,
+            Bewertungen und Meldungen zuverlässig entfernt oder anonymisiert werden können.
+        </p>
+
+        <h2>16. Sicherheit</h2>
+        <p>
+            Die App nutzt Firebase Authentication zur Anmeldung und Firestore-Sicherheitsregeln zur Zugriffskontrolle.
+            Außerdem werden Nutzereingaben im Frontend teilweise maskiert bzw. escaped, um Missbrauch zu reduzieren.
+            Dennoch kann keine absolute Sicherheit garantiert werden. Nutzer sollten sichere Passwörter verwenden und
+            keine sensiblen Daten in Job-Anzeigen oder Chats veröffentlichen.
+        </p>
+
+        <h2>17. Rechte der betroffenen Personen</h2>
+        <p>Nutzer haben nach der DSGVO insbesondere folgende Rechte:</p>
+        <ul>
+            <li>Recht auf Auskunft nach Art. 15 DSGVO</li>
+            <li>Recht auf Berichtigung nach Art. 16 DSGVO</li>
+            <li>Recht auf Löschung nach Art. 17 DSGVO</li>
+            <li>Recht auf Einschränkung der Verarbeitung nach Art. 18 DSGVO</li>
+            <li>Recht auf Datenübertragbarkeit nach Art. 20 DSGVO</li>
+            <li>Recht auf Widerspruch nach Art. 21 DSGVO</li>
+            <li>Recht auf Widerruf einer Einwilligung nach Art. 7 Abs. 3 DSGVO</li>
+        </ul>
+        <p>
+            Zur Ausübung dieser Rechte kann der Nutzer den Verantwortlichen über die oben angegebene Kontaktadresse
+            kontaktieren.
+        </p>
+
+        <h2>18. Beschwerderecht bei einer Aufsichtsbehörde</h2>
+        <p>
+            Nutzer haben das Recht, sich bei einer Datenschutzaufsichtsbehörde zu beschweren, wenn sie der Ansicht
+            sind, dass die Verarbeitung ihrer personenbezogenen Daten gegen Datenschutzrecht verstößt.
+        </p>
+
+        <h2>19. Änderung dieser Datenschutzerklärung</h2>
+        <p>
+            Diese Datenschutzerklärung kann angepasst werden, wenn Funktionen der App, eingesetzte Dienste oder
+            rechtliche Anforderungen geändert werden.
+        </p>
+
+        <h2>20. Wichtige To-dos vor Veröffentlichung</h2>
+        <ul>
+            <li>Betreiberangaben vollständig eintragen.</li>
+            <li>Firebase/Google-Auftragsverarbeitungsbedingungen prüfen und akzeptieren.</li>
+            <li>Firestore-Standort/Region und Datenübermittlungen prüfen.</li>
+            <li>Firebase Security Rules produktiv absichern.</li>
+            <li>Vollständige Löschroutine für Nutzer, Jobs, Chats, Bewertungen und Meldungen festlegen.</li>
+            <li>Bei Nutzung durch Minderjährige zusätzliche Einwilligungs- und Schutzmaßnahmen prüfen.</li>
+            <li>Impressum ergänzen, falls die Website öffentlich betrieben wird.</li>
+        </ul>
+
+        <div class="legal-actions">
+            <a class="btn btn-primary" href="index.html">Zur App</a>
+        </div>
+    </section>
+</main>
+<script src="assets/js/theme.js"></script>
+<script src="assets/js/cookies.js"></script>
+</body>
+</html>
