@@ -12,6 +12,11 @@ function showProfileScreen() {
         <div class="card" onclick="navigateTo('ratings')"><strong>Bewertungen</strong><p class="small-muted">Bewertungen ansehen</p></div>
         <div class="card" onclick="navigateTo('settings')"><strong>Einstellungen</strong><p class="small-muted">Radius, Währung, Design</p></div>
         <div class="card" onclick="navigateTo('edit-profile')"><strong>Profil bearbeiten</strong></div>
+        
+        <div class="settings-item" onclick="openCookieSettings()"><span>🍪 Cookies & Speicher</span><span>Ändern</span></div>
+        <div class="settings-item" onclick="window.open('datenschutz.html','_blank')"><span>🔐 Datenschutzerklärung</span><span>Öffnen</span></div>
+        <div class="settings-item danger-link" onclick="deleteMyAccount()"><span>🗑️ Account löschen</span><span>Löschen</span></div>
+
         <button class="btn btn-danger" onclick="logout()">Abmelden</button>
     </div>`;
 }
@@ -65,4 +70,46 @@ async function sendFeedback() {
     await db.collection('feedback').add({ text, userId: currentUser.uid, email: currentUser.email, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
     showToast('Feedback gesendet');
     navigateTo('profile');
+}
+
+
+// ---------- Account löschen ----------
+async function deleteMyAccount() {
+    if (!currentUser || !auth.currentUser) {
+        showToast('Nicht angemeldet');
+        return;
+    }
+
+    const first = confirm('Willst du deinen Account wirklich löschen?');
+    if (!first) return;
+
+    const second = prompt('Bitte schreibe LÖSCHEN, um den Account endgültig zu löschen.');
+    if (second !== 'LÖSCHEN') {
+        showToast('Löschen abgebrochen');
+        return;
+    }
+
+    try {
+        const uid = currentUser.uid;
+
+        try {
+            await db.collection('users').doc(uid).delete();
+        } catch (e) {
+            console.warn('Profil konnte nicht gelöscht werden:', e);
+        }
+
+        if (typeof clearOptionalStorage === 'function') clearOptionalStorage();
+
+        await auth.currentUser.delete();
+        currentUser = null;
+        showToast('Account gelöscht');
+        navigateTo('login');
+    } catch (err) {
+        if (err && err.code === 'auth/requires-recent-login') {
+            showToast('Bitte neu anmelden und dann erneut löschen');
+            await logout();
+        } else {
+            showToast('Account konnte nicht gelöscht werden: ' + (err.message || err));
+        }
+    }
 }
