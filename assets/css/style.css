@@ -1255,3 +1255,65 @@ body[data-device="desktop"] #jobs-list .card {
         grid-template-columns: repeat(auto-fit, minmax(390px, 1fr));
     }
 }
+
+
+/* ---------- External Monitor / Ultra-Wide Desktop Update ---------- */
+/* Desktop soll bei externen Monitoren und maximiertem Browser wirklich die verfügbare Breite nutzen. */
+html[data-device="desktop"],
+body[data-device="desktop"] {
+    width: 100%;
+    max-width: none;
+}
+
+body[data-device="desktop"] {
+    justify-content: stretch;
+    align-items: stretch;
+    padding: clamp(6px, 0.8vw, 16px);
+}
+
+body[data-device="desktop"] #app {
+    width: calc(100vw - clamp(12px, 1.6vw, 32px)) !important;
+    max-width: none !important;
+    min-width: 0;
+    margin: 0 auto;
+    grid-template-columns: clamp(240px, 14vw, 340px) minmax(0, 1fr);
+}
+
+body[data-device="desktop"] .main-content {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+}
+
+/* Auf großen externen Monitoren mehr Inhalt nebeneinander anzeigen. */
+body[data-device="desktop"] #jobs-list {
+    grid-template-columns: repeat(auto-fit, minmax(clamp(300px, 18vw, 420px), 1fr)) !important;
+    width: 100%;
+}
+
+/* Sehr breite Monitore: Karten bleiben lesbar, aber es entstehen mehr Spalten. */
+@media (min-width: 1800px) {
+    body[data-device="desktop"] #jobs-list {
+        grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)) !important;
+    }
+}
+
+@media (min-width: 2200px) {
+    body[data-device="desktop"] #jobs-list {
+        grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)) !important;
+    }
+}
+
+@media (min-width: 2800px) {
+    body[data-device="desktop"] #jobs-list {
+        grid-template-columns: repeat(auto-fit, minmax(390px, 1fr)) !important;
+    }
+}
+
+/* Wenn ein Tablet/kleiner Laptop am externen Monitor sehr breit wird, ebenfalls Desktop-artig skalieren. */
+@media (min-width: 1280px) {
+    body:not([data-device="mobile"]) #app {
+        width: calc(100vw - clamp(12px, 1.6vw, 32px));
+        max-width: none;
+    }
+}
