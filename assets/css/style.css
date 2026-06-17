@@ -1201,3 +1201,57 @@ body[data-device="desktop"] .map-container {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
+
+
+/* ---------- PC Fluid Width Update ---------- */
+/* PC: nutzt fast die komplette Fensterbreite, statt auf eine feste App-Breite begrenzt zu sein. */
+body[data-device="desktop"] {
+    padding: clamp(8px, 1vw, 18px);
+}
+
+body[data-device="desktop"] #app {
+    width: calc(100vw - clamp(16px, 2vw, 36px));
+    max-width: none;
+    min-height: calc(100vh - clamp(16px, 2vw, 36px));
+    height: calc(100vh - clamp(16px, 2vw, 36px));
+    grid-template-columns: clamp(230px, 15vw, 310px) minmax(0, 1fr);
+}
+
+body[data-device="desktop"] .main-content {
+    padding-right: clamp(16px, 2vw, 34px);
+}
+
+body[data-device="desktop"] #jobs-list {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: clamp(16px, 1.2vw, 24px);
+}
+
+body[data-device="desktop"] #jobs-list .card {
+    min-height: 245px;
+}
+
+/* Große Monitore: mehr Spalten und bessere Flächennutzung */
+@media (min-width: 1500px) {
+    body[data-device="desktop"] #jobs-list {
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+}
+
+@media (min-width: 1900px) {
+    body[data-device="desktop"] #jobs-list {
+        grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    }
+}
+
+@media (min-width: 2400px) {
+    body[data-device="desktop"] #jobs-list {
+        grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    }
+}
+
+/* Sehr breite Monitore: Karten nicht zu schmal werden lassen */
+@media (min-width: 3000px) {
+    body[data-device="desktop"] #jobs-list {
+        grid-template-columns: repeat(auto-fit, minmax(390px, 1fr));
+    }
+}
