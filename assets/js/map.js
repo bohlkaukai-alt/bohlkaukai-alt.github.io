@@ -48,3 +48,63 @@ async function initMap() {
         L.marker([j.lat, j.lng]).addTo(mapMarkersLayer).bindPopup(popup);
     });
 }
+
+
+// ---------- Precise visible user-location pin ----------
+let preciseUserMarker = null;
+let preciseAccuracyCircle = null;
+
+function createUserLocationIcon() {
+    return L.divIcon({
+        className: 'user-location-pin',
+        html: '<div class="user-pin-pulse"></div><div class="user-pin-dot">📍</div>',
+        iconSize: [42, 42],
+        iconAnchor: [21, 38],
+        popupAnchor: [0, -36]
+    });
+}
+
+function addPreciseUserLocationMarker(map) {
+    if (!map || !userLocation || !window.L) return;
+
+    try {
+        if (preciseUserMarker) map.removeLayer(preciseUserMarker);
+        if (preciseAccuracyCircle) map.removeLayer(preciseAccuracyCircle);
+    } catch (e) {}
+
+    const latLng = [userLocation.lat, userLocation.lng];
+
+    preciseAccuracyCircle = L.circle(latLng, {
+        radius: userLocation.accuracy || 60,
+        className: 'user-accuracy-circle',
+        interactive: false
+    }).addTo(map);
+
+    preciseUserMarker = L.marker(latLng, {
+        icon: createUserLocationIcon(),
+        zIndexOffset: 10000
+    }).addTo(map);
+
+    preciseUserMarker.bindPopup(`
+        <strong>📍 Dein genauer Standort</strong><br>
+        ${escapeHtml(userLocation.address || userLocation.name || 'Mein Standort')}<br>
+        <span style="font-size:12px;opacity:.75">Genauigkeit: ${userLocation.accuracy ? 'ca. ' + userLocation.accuracy + ' m' : 'unbekannt'}</span><br>
+        <button style="margin-top:8px;padding:6px 10px;border-radius:12px;border:0;background:#2563EB;color:#fff;font-weight:700" onclick="refreshMyLocation()">Neu bestimmen</button>
+    `);
+}
+
+(function () {
+    const oldShowMapScreen = window.showMapScreen || (typeof showMapScreen === 'function' ? showMapScreen : null);
+    if (!oldShowMapScreen || oldShowMapScreen.__preciseLocationWrapped) return;
+
+    const wrapped = function () {
+        oldShowMapScreen.apply(this, arguments);
+        setTimeout(function () {
+            const map = window.activeMap || window.currentMap || window.map || null;
+            if (map) addPreciseUserLocationMarker(map);
+        }, 800);
+    };
+    wrapped.__preciseLocationWrapped = true;
+    window.showMapScreen = wrapped;
+    try { showMapScreen = wrapped; } catch (e) {}
+})();
