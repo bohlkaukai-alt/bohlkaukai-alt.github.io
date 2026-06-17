@@ -4,6 +4,10 @@ function showJobsScreen() {
     getPreciseLocation();
     selectedCategory = selectedCategory || null;
     document.getElementById('main-content').innerHTML = `
+        <div class="location-toolbar precise-location-toolbar">
+            <button class="location-pill precise-location-pill" onclick="openLocationModal ? openLocationModal() : refreshMyLocation()">📍 ${escapeHtml(userLocation?.address || userLocation?.name || 'Standort wählen')}${userLocation?.accuracy ? ' · ca. ' + userLocation.accuracy + ' m genau' : ''}</button>
+            <button class="icon-pill precise-pin-btn" onclick="refreshMyLocation()">🎯 Standort genau bestimmen</button>
+        </div>
         <div class="start-type-buttons">
             <div class="start-type-btn ${currentJobTypeFilter === 'offer' ? 'active' : ''}" onclick="setJobTypeFilter('offer')">Arbeit geben</div>
             <div class="start-type-btn ${currentJobTypeFilter === 'seek' ? 'active' : ''}" onclick="setJobTypeFilter('seek')">Hilfe bekommen</div>
@@ -106,7 +110,7 @@ function showCreateJobScreen() {
         </select>
         <div id="custom-category-div" style="display:none"><input id="custom-category" class="form-input" placeholder="Eigene Kategorie"></div>
         <textarea id="job-description" class="form-textarea" placeholder="Beschreibung"></textarea>
-        <input id="job-location" class="form-input" placeholder="Ort (Stadt)" value="${escapeHtml(userLocation?.name || '')}">
+        <input id="job-location" class="form-input" placeholder="Ort (Stadt)" value="${escapeHtml(userLocation?.address || userLocation?.name || '')}">
         <input id="job-payment" class="form-input" placeholder="Betrag (z.B. 15)">
         <button class="btn btn-accent" onclick="createJob()">Veröffentlichen</button>
     </div>`;
