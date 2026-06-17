@@ -1,9 +1,0 @@
-{
-  "name": "MiniJob Finder",
-  "short_name": "MiniJob",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "background_color": "#F5F5F5",
-  "theme_color": "#1565C0",
-  "description": "MiniJob Finder Web-App"
-}
