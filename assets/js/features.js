@@ -451,3 +451,28 @@ function setManualDevice(device){ localStorage.setItem('mf_manual_device', devic
 window.addEventListener('beforeinstallprompt', (e)=>{ e.preventDefault(); deferredInstallPrompt=e; setTimeout(()=>{ if(!localStorage.getItem('mf_install_hint')) { localStorage.setItem('mf_install_hint','yes'); showToast('Du kannst die App installieren.'); }},1000); });
 async function installPwa(){ if(deferredInstallPrompt){ deferredInstallPrompt.prompt(); await deferredInstallPrompt.userChoice; deferredInstallPrompt=null; } else showToast('Installation über Browser-Menü möglich.'); }
 if ('serviceWorker' in navigator) { window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }
+
+
+// ---------- Precise Location Modal Update ----------
+function openLocationModal() {
+    const accuracyText = userLocation?.accuracy ? `ca. ${userLocation.accuracy} m genau` : 'Genauigkeit unbekannt';
+    const addressText = userLocation?.address || userLocation?.name || 'Noch kein Standort gespeichert';
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h2>📍 Standort</h2>
+            <p class="small-muted" style="margin:8px 0 12px">Aktueller Standort:</p>
+            <div class="location-preview-card">
+                <div class="big-pin">📍</div>
+                <div>
+                    <strong>${escapeHtml(addressText)}</strong>
+                    <p class="small-muted">${escapeHtml(accuracyText)}</p>
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="this.closest('.modal-overlay').remove(); refreshMyLocation()">🎯 Standort genauer bestimmen</button>
+            <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">Schließen</button>
+        </div>`;
+    document.body.appendChild(modal);
+}
