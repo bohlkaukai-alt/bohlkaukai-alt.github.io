@@ -77,51 +77,111 @@ function calculateDistance(lat1, lng1, lat2, lng2) {
     const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
     return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 10) / 10;
 }
-function getPreciseLocation(cb) {
-    const cached = localStorage.getItem('mf_location');
-    if (cached && !userLocation) {
-        try { userLocation = JSON.parse(cached); } catch(e) {}
+function getPreciseLocation(cb, forceRefresh = false) {
+    const saved = localStorage.getItem('mf_location');
+    if (!forceRefresh && saved) {
+        try {
+            userLocation = JSON.parse(saved);
+            if (cb) cb();
+            return;
+        } catch (e) {}
     }
-    if ('geolocation' in navigator) {
-        navigator.geolocation.getCurrentPosition(async pos => {
-            const { latitude, longitude } = pos.coords;
-            try {
-                const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=de`);
-                const data = await resp.json();
-                const city = data.address?.city || data.address?.town || data.address?.village || 'Mein Standort';
-                userLocation = { lat: latitude, lng: longitude, name: city };
-            } catch(e) {
-                userLocation = { lat: latitude, lng: longitude, name: 'Mein Standort' };
-            }
-            localStorage.setItem('mf_location', JSON.stringify(userLocation));
-            if (cb) cb();
-        }, () => {
-            if (!userLocation) userLocation = { lat: 51.89, lng: 10.17, name: 'Seesen' };
-            if (cb) cb();
-        }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 });
-    } else {
-        if (!userLocation) userLocation = { lat: 51.89, lng: 10.17, name: 'Seesen' };
+
+    if (!('geolocation' in navigator)) {
+        userLocation = userLocation || { lat: 51.89, lng: 10.17, name: 'Seesen', address: 'Seesen', accuracy: null, source: 'fallback' };
+        localStorage.setItem('mf_location', JSON.stringify(userLocation));
         if (cb) cb();
+        return;
     }
+
+    navigator.geolocation.getCurrentPosition(async pos => {
+        const latitude = pos.coords.latitude;
+        const longitude = pos.coords.longitude;
+        const accuracy = Math.round(pos.coords.accuracy || 0);
+
+        let name = 'Mein Standort';
+        let addressText = '';
+        try {
+            const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1&accept-language=de`;
+            const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
+            const data = await resp.json();
+            const a = data.address || {};
+            name = a.city || a.town || a.village || a.municipality || a.county || 'Mein Standort';
+            const road = a.road || a.pedestrian || a.footway || a.path || '';
+            const house = a.house_number || '';
+            const postcode = a.postcode || '';
+            addressText = [road && (road + (house ? ' ' + house : '')), postcode, name].filter(Boolean).join(', ');
+        } catch (e) {}
+
+        userLocation = {
+            lat: latitude,
+            lng: longitude,
+            name: name,
+            address: addressText || name,
+            accuracy: accuracy,
+            source: 'gps'
+        };
+
+        localStorage.setItem('mf_location', JSON.stringify(userLocation));
+        if (cb) cb();
+    }, () => {
+        if (!userLocation) {
+            userLocation = { lat: 51.89, lng: 10.17, name: 'Seesen', address: 'Seesen', accuracy: null, source: 'fallback' };
+        }
+        localStorage.setItem('mf_location', JSON.stringify(userLocation));
+        if (cb) cb();
+    }, {
+        enableHighAccuracy: true,
+        timeout: 18000,
+        maximumAge: forceRefresh ? 0 : 20000
+    });
 }
 async function getRandomPointInCity(cityName) {
-    try {
-        const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityName)}&limit=1`);
-        const data = await resp.json();
-        if (data && data.length > 0) {
-            let lat = parseFloat(data[0].lat);
-            let lng = parseFloat(data[0].lon);
-            const offset = 0.018;
-            lat += (Math.random() - 0.5) * offset;
-            lng += (Math.random() - 0.5) * offset;
-            return { lat, lng };
-        }
-    } catch(e) {}
-    if (userLocation) {
-        const offset = 0.01;
-        return { lat: userLocation.lat + (Math.random() - 0.5) * offset, lng: userLocation.lng + (Math.random() - 0.5) * offset };
+    return geocodeAddress(cityName);
+}
+
+async function geocodeAddress(query) {
+    const q = (query || '').trim();
+    if (!q && userLocation) {
+        return { lat: userLocation.lat, lng: userLocation.lng, displayName: userLocation.address || userLocation.name };
     }
-    return { lat: 51.89, lng: 10.17 };
+
+    try {
+        const searchUrl = `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(q)}&limit=1&addressdetails=1&accept-language=de`;
+        const resp = await fetch(searchUrl, { headers: { 'Accept': 'application/json' } });
+        const data = await resp.json();
+
+        if (data && data.length > 0) {
+            return {
+                lat: parseFloat(data[0].lat),
+                lng: parseFloat(data[0].lon),
+                displayName: data[0].display_name || q,
+                source: 'geocoded'
+            };
+        }
+    } catch (e) {}
+
+    if (userLocation) {
+        return {
+            lat: userLocation.lat,
+            lng: userLocation.lng,
+            displayName: userLocation.address || userLocation.name,
+            source: 'current-location-fallback'
+        };
+    }
+
+    return { lat: 51.89, lng: 10.17, displayName: 'Seesen', source: 'fallback' };
+}
+
+function refreshMyLocation() {
+    showToast('Standort wird genau bestimmt...');
+    getPreciseLocation(() => {
+        const txt = userLocation?.accuracy ? `Standort aktualisiert: ca. ${userLocation.accuracy} m genau` : 'Standort aktualisiert';
+        showToast(txt);
+        if (currentPage === 'jobs') showJobsScreen();
+        else if (currentPage === 'map') showMapScreen();
+        else updateHeader(currentPage);
+    }, true);
 }
 function formatDate(value) {
     if (!value) return '';
