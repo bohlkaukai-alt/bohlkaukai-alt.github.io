@@ -75,6 +75,10 @@ function showRegister() {
                 <input id="reg-email" class="form-input" placeholder="E-Mail" autocomplete="email" inputmode="email">
                 <input id="reg-password" type="password" class="form-input" placeholder="Passwort" autocomplete="new-password">
                 <input id="reg-birthdate" type="date" class="form-input">
+        <label class="privacy-check">
+            <input id="reg-privacy" type="checkbox">
+            <span>Ich akzeptiere die <a href="datenschutz.html" target="_blank" rel="noopener">Datenschutzerklärung</a>.</span>
+        </label>
                 <button id="register-button" class="btn btn-accent" onclick="register()">Registrieren</button>
                 <button class="btn btn-outline" onclick="showLoginScreen()">Zurück</button>
             </div>
