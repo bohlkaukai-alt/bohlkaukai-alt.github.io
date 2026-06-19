@@ -390,8 +390,8 @@ function showTutorialStep(i, steps){
         if(!target){
             target = document.getElementById('app') || document.body;
         }
-        try { target.scrollIntoView({ block:'center', inline:'center', behavior:'smooth' }); } catch(e) {}
-        setTimeout(() => renderTutorialOverlay(i, steps, target), 220);
+        try { target.scrollIntoView({ block:'center', inline:'center', behavior:'auto' }); } catch(e) {}
+setTimeout(() => renderTutorialOverlay(i, steps, target), 80);
     });
 }
 
