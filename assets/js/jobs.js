@@ -4,29 +4,26 @@ function showJobsScreen() {
     getPreciseLocation();
     selectedCategory = selectedCategory || null;
     document.getElementById('main-content').innerHTML = `
-        <div style="display:flex; gap:10px; padding:10px 14px; align-items:flex-start;">
-            <button class="location-pill precise-location-pill" style="flex:1;" onclick="openLocationModal ? openLocationModal() : refreshMyLocation()">
-                🔍 ${escapeHtml(userLocation?.address || userLocation?.name || 'Ort suchen')}
+        <div style="display:flex; gap:8px; padding:10px 14px 6px; align-items:center;">
+            <button class="icon-circle" style="flex-shrink:0;" onclick="openLocationModal ? openLocationModal() : refreshMyLocation()" title="Ort suchen">
+                <span class="material-icons">search</span>
             </button>
-            <div style="display:flex; flex-direction:column; gap:8px;">
-                <button class="icon-circle" onclick="openLocationModal ? openLocationModal() : refreshMyLocation()" title="Ort suchen">
-                    <span class="material-icons">search</span>
-                </button>
-                <button class="icon-circle" onclick="refreshMyLocation()" title="Mein Standort">
-                    <span class="material-icons">my_location</span>
-                </button>
-                <button class="icon-circle" onclick="navigateTo('map')" title="Kartenansicht">
-                    <span class="material-icons">map</span>
-                </button>
+            <div class="start-type-buttons" style="flex:1; margin:0; padding:4px;">
+                <div class="start-type-btn ${currentJobTypeFilter === 'offer' ? 'active' : ''}" style="font-size:11px; padding:7px 4px;" onclick="setJobTypeFilter('offer')">Arbeit geben</div>
+                <div class="start-type-btn ${currentJobTypeFilter === 'seek' ? 'active' : ''}" style="font-size:11px; padding:7px 4px;" onclick="setJobTypeFilter('seek')">Hilfe suchen</div>
+                <div class="start-type-btn ${currentJobTypeFilter === 'all' ? 'active' : ''}" style="font-size:11px; padding:7px 4px;" onclick="setJobTypeFilter('all')">Alle</div>
             </div>
+            <select class="sort-select" style="min-width:100px; height:38px; font-size:13px; flex-shrink:0;" onchange="setSortOrder ? setSortOrder(this.value) : null">
+                <option value="newest">Neueste</option>
+                <option value="distance">Entfernung</option>
+            </select>
         </div>
-        <div class="start-type-buttons">
-            <div class="start-type-btn ${currentJobTypeFilter === 'offer' ? 'active' : ''}" onclick="setJobTypeFilter('offer')">Arbeit geben</div>
-            <div class="start-type-btn ${currentJobTypeFilter === 'seek' ? 'active' : ''}" onclick="setJobTypeFilter('seek')">Hilfe bekommen</div>
-            <div class="start-type-btn ${currentJobTypeFilter === 'all' ? 'active' : ''}" onclick="setJobTypeFilter('all')">Alle</div>
+        <div style="display:flex; gap:8px; padding:0 14px 10px; align-items:center;">
+            <div class="filter-scroll" style="flex:1; padding:0; margin:0;">${categories.map(c => `<button class="filter-chip ${(c === 'Alle' && !selectedCategory) || c === selectedCategory ? 'active' : ''}" onclick="setCategory(this,'${c === 'Alle' ? '' : escapeJs(c)}')">${escapeHtml(c)}</button>`).join('')}</div>
+            <button class="location-pill" style="flex-shrink:0; white-space:nowrap; font-size:12px; padding:8px 10px; max-width:140px; overflow:hidden; text-overflow:ellipsis;" onclick="openLocationModal ? openLocationModal() : refreshMyLocation()">
+                📍 ${escapeHtml(userLocation?.address || userLocation?.name || 'Ort')}${userLocation?.accuracy ? ' · ' + userLocation.accuracy + 'm' : ''}
+            </button>
         </div>
-        <input type="text" class="search-input" id="job-search" placeholder="🔍 Jobs suchen..." oninput="loadJobs()">
-        <div class="filter-scroll">${categories.map(c => `<button class="filter-chip ${(c === 'Alle' && !selectedCategory) || c === selectedCategory ? 'active' : ''}" onclick="setCategory(this,'${c === 'Alle' ? '' : escapeJs(c)}')">${escapeHtml(c)}</button>`).join('')}</div>
         <div id="jobs-list"><div class="spinner"></div></div>`;
     loadJobs();
 }
