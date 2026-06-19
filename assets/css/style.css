@@ -1000,9 +1000,7 @@ body[data-device="tablet"] .map-container {
 body.tutorial-locked { overflow: hidden !important; }
 body.tutorial-locked .main-content { overflow: hidden !important; touch-action: none; }
 
-body[data-device="tablet"] #app { max-width: 900px; }
-body[data-device="tablet"] #jobs-list,
-body[data-device="desktop"] #jobs-list { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 0; }
+
 body[data-device="desktop"] #app { max-width: 1180px; display:grid; grid-template-columns: 236px 1fr; grid-template-rows: auto 1fr; }
 body[data-device="desktop"] #app-header-container { grid-column: 1 / 3; }
 body[data-device="desktop"] .main-content { grid-column: 2; grid-row: 2; }
