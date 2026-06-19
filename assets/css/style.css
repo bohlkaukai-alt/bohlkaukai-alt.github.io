@@ -984,8 +984,8 @@ body[data-device="tablet"] .map-container {
 .tutorial-shade-right,
 .tutorial-shade-bottom { position: fixed; }
 .tutorial-shade-bottom { left:0; right:0; bottom:0; }
-.tutorial-frame { position: fixed; border: 3px solid #FBBF24; border-radius: 18px; box-shadow: 0 0 0 6px rgba(251,191,36,.22), 0 0 30px rgba(251,191,36,.75); animation: tutorialPulse 1.4s ease-in-out infinite; pointer-events: none; }
-.tutorial-target-active { position: relative; z-index: 10001 !important; border-radius: 14px; }
+.tutorial-frame { position: fixed; border: 3px solid #FBBF24; border-radius: 18px; box-shadow: 0 0 0 6px rgba(251,191,36,.22), 0 0 30px rgba(251,191,36,.75); animation: tutorialPulse 1.4s ease-in-out infinite; pointer-events: auto; }
+.tutorial-target-active { position: relative; z-index: 1 !important; border-radius: 14px; }
 .tutorial-box { width:100%; max-width:460px; background: var(--surface-solid); color: var(--text); border-radius: 24px; border: 1px solid var(--border); padding: 20px; box-shadow: var(--shadow-soft); }
 .tutorial-box-floating { position: fixed; z-index: 10003; max-width: min(420px, calc(100vw - 32px)); }
 .tutorial-progress { color: var(--text-secondary); margin: 12px 0 8px; font-size: 12px; display:flex; justify-content:space-between; gap: 12px; }
@@ -997,6 +997,8 @@ body[data-device="tablet"] .map-container {
 @media (max-width: 640px) {
   .tutorial-box-floating { left: 16px !important; right: 16px !important; top: auto !important; bottom: 16px !important; max-width: none; }
 }
+body.tutorial-locked { overflow: hidden !important; }
+body.tutorial-locked .main-content { overflow: hidden !important; touch-action: none; }
 
 body[data-device="tablet"] #app { max-width: 900px; }
 body[data-device="tablet"] #jobs-list,
@@ -1822,5 +1824,6 @@ body[data-device="mobile"] #social-footer {
         width: 30px;
         height: 30px;
     }
-    .legal-social-links { display: flex; flex-direction: column; gap: 8px; }
+   
 }
+ .legal-social-links { display: flex; flex-direction: column; gap: 8px; }
