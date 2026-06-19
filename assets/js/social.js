@@ -1,9 +1,9 @@
 // ---------- Social Media Links ----------
 // Hier deine echten Profile eintragen.
 window.MINIJOB_SOCIAL_LINKS = {
-    instagram: "https://www.instagram.com/",
-    tiktok: "https://www.tiktok.com/",
-    facebook: "https://www.facebook.com/"
+    instagram: "https://www.instagram.com/minijobfinder?igsh=dnNzYnZ6MndpODN4",
+    tiktok: "https://pro.tiktok.com/t/ZG9js9GAC9k4A-fhmKc/",
+    facebook: "https://www.facebook.com/share/17g7jF28Tt/"
 };
 
 function applySocialLinks() {
@@ -29,9 +29,9 @@ function socialFooterMarkup() {
     return `<div class="social-footer">
         <a href="impressum.html">Impressum</a>
         <a href="datenschutz.html">Datenschutz</a>
-        <a data-social="instagram" href="https://www.instagram.com/minijobfinder?igsh=dnNzYnZ6MndpODN4" target="_blank" rel="noopener">Instagram</a>
-        <a data-social="tiktok" href="https://pro.tiktok.com/t/ZG9js9GAC9k4A-fhmKc/" target="_blank" rel="noopener">TikTok</a>
-        <a data-social="facebook" href="https://www.facebook.com/share/17g7jF28Tt/" target="_blank" rel="noopener">Facebook</a>
+        <a data-social="instagram" href="${window.MINIJOB_SOCIAL_LINKS.instagram}" target="_blank" rel="noopener">Instagram</a>
+        <a data-social="tiktok" href="${window.MINIJOB_SOCIAL_LINKS.tiktok}" target="_blank" rel="noopener">TikTok</a>
+        <a data-social="facebook" href="${window.MINIJOB_SOCIAL_LINKS.facebook}" target="_blank" rel="noopener">Facebook</a>
     </div>`;
 }
 
