@@ -1822,4 +1822,5 @@ body[data-device="mobile"] #social-footer {
         width: 30px;
         height: 30px;
     }
+    .legal-social-links { display: flex; flex-direction: column; gap: 8px; }
 }
