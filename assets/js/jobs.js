@@ -4,9 +4,21 @@ function showJobsScreen() {
     getPreciseLocation();
     selectedCategory = selectedCategory || null;
     document.getElementById('main-content').innerHTML = `
-        <div class="location-toolbar precise-location-toolbar">
-            <button class="location-pill precise-location-pill" onclick="openLocationModal ? openLocationModal() : refreshMyLocation()">📍 ${escapeHtml(userLocation?.address || userLocation?.name || 'Standort wählen')}${userLocation?.accuracy ? ' · ca. ' + userLocation.accuracy + ' m genau' : ''}</button>
-            <button class="icon-pill precise-pin-btn" onclick="refreshMyLocation()">🎯 Standort genau bestimmen</button>
+        <div style="display:flex; gap:10px; padding:10px 14px; align-items:flex-start;">
+            <button class="location-pill precise-location-pill" style="flex:1;" onclick="openLocationModal ? openLocationModal() : refreshMyLocation()">
+                🔍 ${escapeHtml(userLocation?.address || userLocation?.name || 'Ort suchen')}
+            </button>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <button class="icon-circle" onclick="openLocationModal ? openLocationModal() : refreshMyLocation()" title="Ort suchen">
+                    <span class="material-icons">search</span>
+                </button>
+                <button class="icon-circle" onclick="refreshMyLocation()" title="Mein Standort">
+                    <span class="material-icons">my_location</span>
+                </button>
+                <button class="icon-circle" onclick="navigateTo('map')" title="Kartenansicht">
+                    <span class="material-icons">map</span>
+                </button>
+            </div>
         </div>
         <div class="start-type-buttons">
             <div class="start-type-btn ${currentJobTypeFilter === 'offer' ? 'active' : ''}" onclick="setJobTypeFilter('offer')">Arbeit geben</div>
