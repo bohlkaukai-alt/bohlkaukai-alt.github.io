@@ -352,7 +352,7 @@ function getTutorialSteps(){
         { title:'📊 Statistik', text:'Hier siehst du aktive Jobs, Bewertung und Anzahl der Bewertungen.', page:'profile', selector:'.stats-grid' },
         { title:'⚙️ Einstellungen', text:'Hier findest du Dark Mode, Sounds, Kategorien, Wohnort und Installation.', page:'profile', selector:'.card[onclick="navigateTo(\'settings\')"]' },
         { title:'🌙 Dark Mode', text:'In den Einstellungen kannst du den Dark Mode ein- und ausschalten.', page:'settings', selector:'.settings-item[onclick="toggleTheme()"]' },
-        { title:'✅ Fertig', text:'Das Tutorial ist abgeschlossen. Du kannst es in den Einstellungen jederzeit neu starten.', page:'settings', selector:'button[onclick="startTutorial(true)"]' }
+        { title:'✅ Fertig', text:'Das Tutorial ist abgeschlossen. Du kannst es in den Einstellungen jederzeit neu starten.', page:'settings', selector:'.settings-item[onclick="startTutorial(true)"]' }
     ];
 }
 
