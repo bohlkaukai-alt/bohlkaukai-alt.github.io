@@ -126,17 +126,29 @@ showJobsScreen = function() {
             <button class="location-pill" onclick="openLocationModal()">📍 ${escapeHtml(userLocation?.name || localStorage.getItem('mf_city') || 'Standort')} · ${radiusLabel()}</button>
             <select class="sort-select" onchange="currentSortMode=this.value;localStorage.setItem('mf_sort_mode',this.value);loadJobs()"><option value="newest" ${currentSortMode==='newest'?'selected':''}>Neueste</option><option value="distance" ${currentSortMode==='distance'?'selected':''}>Entfernung</option></select>
         </div>
-        <div class="start-type-buttons"><div class="start-type-btn ${currentJobTypeFilter === 'offer' ? 'active' : ''}" onclick="setJobTypeFilter('offer')">Arbeit geben</div><div class="start-type-btn ${currentJobTypeFilter === 'seek' ? 'active' : ''}" onclick="setJobTypeFilter('seek')">Hilfe suchen</div><div class="start-type-btn ${currentJobTypeFilter === 'all' ? 'active' : ''}" onclick="setJobTypeFilter('all')">Alle</div></div>
-        <input type="text" class="search-input" id="job-search" placeholder="🔍 Jobs suchen..." oninput="loadJobs()">
+        <div class="row" style="padding:0 14px;align-items:center;gap:8px;margin:12px 0 4px;">
+            <button class="icon-circle" onclick="toggleJobSearch()" aria-label="Suchen" style="flex:0 0 auto;">🔍</button>
+            <div class="start-type-buttons" style="margin:0;flex:1;"><div class="start-type-btn ${currentJobTypeFilter === 'offer' ? 'active' : ''}" onclick="setJobTypeFilter('offer')">Arbeit geben</div><div class="start-type-btn ${currentJobTypeFilter === 'seek' ? 'active' : ''}" onclick="setJobTypeFilter('seek')">Hilfe suchen</div><div class="start-type-btn ${currentJobTypeFilter === 'all' ? 'active' : ''}" onclick="setJobTypeFilter('all')">Alle</div></div>
+        </div>
+        <input type="text" class="search-input hidden" id="job-search" placeholder="🔍 Jobs suchen..." oninput="loadJobs()">
         <div class="filter-scroll">${cats.filter(c=>c!=='Eigene...').map(c => `<button class="filter-chip ${(c === 'Alle' && !selectedCategory) || c === selectedCategory ? 'active' : ''}" onclick="setCategory(this,'${c === 'Alle' ? '' : escapeJs(c)}')">${getCategoryEmoji(c)} ${escapeHtml(c)}</button>`).join('')}</div>
         <div id="jobs-list">${skeletonCards()}</div>`;
     loadJobs();
 };
+function toggleJobSearch(){
+    const input = document.getElementById('job-search');
+    if(!input) return;
+    input.classList.toggle('hidden');
+    if(!input.classList.contains('hidden')) input.focus();
+}
+
 loadJobs = function() {
     if (jobsUnsubscribe) { jobsUnsubscribe(); jobsUnsubscribe = null; }
     if (isStratoBackend()) { loadJobsFromStrato(); return; }
     const list = document.getElementById('jobs-list');
     if (list) list.innerHTML = skeletonCards();
+
+    
     // bewusst ohne komplexen Firestore-Index: Filtern/Sortieren clientseitig
     jobsUnsubscribe = db.collection('jobs').onSnapshot(snap => {
         let jobs = snap.docs.map(d => ({ id: d.id, data: d.data() }));
