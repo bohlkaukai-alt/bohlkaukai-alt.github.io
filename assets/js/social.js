@@ -2,7 +2,7 @@
 // Hier deine echten Profile eintragen.
 window.MINIJOB_SOCIAL_LINKS = {
     instagram: "https://www.instagram.com/",
-    tiktok: "https://www.tiktok.com/"
+    tiktok: "https://www.tiktok.com/",
     facebook: "https://www.facebook.com/"
 };
 
