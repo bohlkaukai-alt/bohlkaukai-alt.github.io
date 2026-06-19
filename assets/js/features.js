@@ -122,16 +122,27 @@ showJobsScreen = function() {
     getPreciseLocation();
     const cats = getAllCategories();
     document.getElementById('main-content').innerHTML = `
-        <div class="location-toolbar">
-            <button class="location-pill" onclick="openLocationModal()">📍 ${escapeHtml(userLocation?.name || localStorage.getItem('mf_city') || 'Standort')} · ${radiusLabel()}</button>
-            <select class="sort-select" onchange="currentSortMode=this.value;localStorage.setItem('mf_sort_mode',this.value);loadJobs()"><option value="newest" ${currentSortMode==='newest'?'selected':''}>Neueste</option><option value="distance" ${currentSortMode==='distance'?'selected':''}>Entfernung</option></select>
+        <div style="display:flex; gap:8px; padding:10px 14px 6px; align-items:center;">
+            <button class="icon-circle" style="flex-shrink:0;" onclick="toggleJobSearch()" aria-label="Suchen">
+                <span class="material-icons">search</span>
+            </button>
+            <div class="start-type-buttons" style="flex:1; margin:0; padding:4px;">
+                <div class="start-type-btn ${currentJobTypeFilter === 'offer' ? 'active' : ''}" style="font-size:11px; padding:7px 4px;" onclick="setJobTypeFilter('offer')">Arbeit geben</div>
+                <div class="start-type-btn ${currentJobTypeFilter === 'seek' ? 'active' : ''}" style="font-size:11px; padding:7px 4px;" onclick="setJobTypeFilter('seek')">Hilfe suchen</div>
+                <div class="start-type-btn ${currentJobTypeFilter === 'all' ? 'active' : ''}" style="font-size:11px; padding:7px 4px;" onclick="setJobTypeFilter('all')">Alle</div>
+            </div>
+            <select class="sort-select" style="min-width:100px; height:38px; font-size:13px; flex-shrink:0;" onchange="currentSortMode=this.value;localStorage.setItem('mf_sort_mode',this.value);loadJobs()">
+                <option value="newest" ${currentSortMode==='newest'?'selected':''}>Neueste</option>
+                <option value="distance" ${currentSortMode==='distance'?'selected':''}>Entfernung</option>
+            </select>
         </div>
-        <div class="row" style="padding:0 14px;align-items:center;gap:8px;margin:12px 0 4px;">
-            <button class="icon-circle" onclick="toggleJobSearch()" aria-label="Suchen" style="flex:0 0 auto;">🔍</button>
-            <div class="start-type-buttons" style="margin:0;flex:1;"><div class="start-type-btn ${currentJobTypeFilter === 'offer' ? 'active' : ''}" onclick="setJobTypeFilter('offer')">Arbeit geben</div><div class="start-type-btn ${currentJobTypeFilter === 'seek' ? 'active' : ''}" onclick="setJobTypeFilter('seek')">Hilfe suchen</div><div class="start-type-btn ${currentJobTypeFilter === 'all' ? 'active' : ''}" onclick="setJobTypeFilter('all')">Alle</div></div>
+        <div style="display:flex; gap:8px; padding:0 14px 10px; align-items:center;">
+            <div class="filter-scroll" style="flex:1; padding:0; margin:0;">${cats.filter(c=>c!=='Eigene...').map(c => `<button class="filter-chip ${(c === 'Alle' && !selectedCategory) || c === selectedCategory ? 'active' : ''}" onclick="setCategory(this,'${c === 'Alle' ? '' : escapeJs(c)}')">${getCategoryEmoji(c)} ${escapeHtml(c)}</button>`).join('')}</div>
+            <button class="location-pill" style="flex-shrink:0; white-space:nowrap; font-size:12px; padding:8px 10px; max-width:140px; overflow:hidden; text-overflow:ellipsis;" onclick="openLocationModal()">
+                📍 ${escapeHtml(userLocation?.name || localStorage.getItem('mf_city') || 'Ort')} · ${radiusLabel()}
+            </button>
         </div>
         <input type="text" class="search-input hidden" id="job-search" placeholder="🔍 Jobs suchen..." oninput="loadJobs()">
-        <div class="filter-scroll">${cats.filter(c=>c!=='Eigene...').map(c => `<button class="filter-chip ${(c === 'Alle' && !selectedCategory) || c === selectedCategory ? 'active' : ''}" onclick="setCategory(this,'${c === 'Alle' ? '' : escapeJs(c)}')">${getCategoryEmoji(c)} ${escapeHtml(c)}</button>`).join('')}</div>
         <div id="jobs-list">${skeletonCards()}</div>`;
     loadJobs();
 };
