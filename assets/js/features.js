@@ -291,11 +291,25 @@ showMapScreen = function() {
                     <span class="material-icons">layers</span>
                 </button>
             </div>
-            <div id="map-filter-bar" class="closed" style="position:absolute; top:60px; left:12px; right:12px; z-index:499; border-radius:18px; overflow:hidden; max-height:0; transition:max-height 0.3s; background:var(--surface-solid); border:1px solid var(--border); box-shadow:var(--shadow-soft);"><div class="map-filters" style="padding:10px;">${cats.map(c => `<label class="category-check"><input type="checkbox" ${selectedMapCategories.size===0 || selectedMapCategories.has(c) ? 'checked' : ''} onchange="toggleMapCategory('${escapeJs(c)}', this.checked)"> ${getCategoryEmoji(c)} ${escapeHtml(c)}</label>`).join('')}</div></div>
+            <div id="map-filter-bar" class="closed" style="position:absolute; top:60px; left:12px; right:12px; z-index:499; border-radius:18px; overflow:hidden; max-height:0; transition:max-height 0.3s; background:var(--surface-solid); border:none; box-shadow:none;"><div class="map-filters" style="padding:10px;">${cats.map(c => `<label class="category-check"><input type="checkbox" ${selectedMapCategories.size===0 || selectedMapCategories.has(c) ? 'checked' : ''} onchange="toggleMapCategory('${escapeJs(c)}', this.checked)"> ${getCategoryEmoji(c)} ${escapeHtml(c)}</label>`).join('')}</div></div>
             <div id="job-map" class="map-container" style="height:calc(100vh - 124px);"></div>
         </div>`;
     setTimeout(initMap, 50);
 };
+function toggleMapFilters() {
+    const bar = document.getElementById('map-filter-bar');
+    if (!bar) return;
+    const isOpen = bar.style.maxHeight && bar.style.maxHeight !== '0px';
+    if (isOpen) {
+        bar.style.maxHeight = '0px';
+        bar.style.border = 'none';
+        bar.style.boxShadow = 'none';
+    } else {
+        bar.style.maxHeight = '300px';
+        bar.style.border = '1px solid var(--border)';
+        bar.style.boxShadow = 'var(--shadow-soft)';
+    }
+}
 function toggleMapCategory(cat, checked) { if (checked) selectedMapCategories.add(cat); else selectedMapCategories.delete(cat); localStorage.setItem('mf_map_categories', JSON.stringify([...selectedMapCategories])); initMap(); }
 function switchMapTileMode() { mapTileMode = mapTileMode === 'street' ? 'satellite' : 'street'; localStorage.setItem('mf_map_tile', mapTileMode); showMapScreen(); }
 function openMapSearch() { document.body.insertAdjacentHTML('beforeend', `<div class="modal-overlay" id="map-search-modal"><div class="modal-content"><h3>Ort suchen</h3><input id="map-search-city" class="form-input" placeholder="Stadt oder Adresse"><button class="btn btn-accent" onclick="searchMapCity()">Suchen</button><button class="btn btn-outline" onclick="document.getElementById('map-search-modal').remove()">Abbrechen</button></div></div>`); }
