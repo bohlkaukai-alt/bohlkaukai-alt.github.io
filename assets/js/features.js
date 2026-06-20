@@ -276,11 +276,11 @@ showMapScreen = function() {
     updateHeader('map');
     const cats = getAllCategories().filter(c => c !== 'Eigene...');
     document.getElementById('main-content').innerHTML = `
-        <div style="display:flex; gap:10px; padding:10px 14px; align-items:flex-start;">
-            <button class="icon-pill" style="flex:1; justify-content:center;" onclick="toggleMapFilters()">
-                <span class="material-icons">tune</span> Filter
+        <div style="position:relative;">
+            <button class="icon-circle" style="position:absolute; top:12px; left:12px; z-index:500;" onclick="toggleMapFilters()" title="Filter">
+                <span class="material-icons">tune</span>
             </button>
-            <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="position:absolute; top:12px; right:12px; z-index:500; display:flex; flex-direction:column; gap:8px;">
                 <button class="icon-circle" onclick="openMapSearch()" title="Ort suchen">
                     <span class="material-icons">search</span>
                 </button>
@@ -291,9 +291,9 @@ showMapScreen = function() {
                     <span class="material-icons">layers</span>
                 </button>
             </div>
-        </div>
-        <div id="map-filter-bar" class="map-filter-bar closed"><div class="map-filters">${cats.map(c => `<label class="category-check"><input type="checkbox" ${selectedMapCategories.size===0 || selectedMapCategories.has(c) ? 'checked' : ''} onchange="toggleMapCategory('${escapeJs(c)}', this.checked)"> ${getCategoryEmoji(c)} ${escapeHtml(c)}</label>`).join('')}</div></div>
-        <div id="job-map" class="map-container"></div>`;
+            <div id="map-filter-bar" class="map-filter-bar closed" style="position:absolute; top:60px; left:12px; right:12px; z-index:499; border-radius:18px;"><div class="map-filters">${cats.map(c => `<label class="category-check"><input type="checkbox" ${selectedMapCategories.size===0 || selectedMapCategories.has(c) ? 'checked' : ''} onchange="toggleMapCategory('${escapeJs(c)}', this.checked)"> ${getCategoryEmoji(c)} ${escapeHtml(c)}</label>`).join('')}</div></div>
+            <div id="job-map" class="map-container" style="height:calc(100vh - 124px);"></div>
+        </div>`;
     setTimeout(initMap, 50);
 };
 function toggleMapCategory(cat, checked) { if (checked) selectedMapCategories.add(cat); else selectedMapCategories.delete(cat); localStorage.setItem('mf_map_categories', JSON.stringify([...selectedMapCategories])); initMap(); }
