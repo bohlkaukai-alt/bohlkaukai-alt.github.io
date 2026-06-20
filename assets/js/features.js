@@ -291,7 +291,7 @@ showMapScreen = function() {
                     <span class="material-icons">layers</span>
                 </button>
             </div>
-            <div id="map-filter-bar" class="map-filter-bar closed" style="position:absolute; top:60px; left:12px; right:12px; z-index:499; border-radius:18px;"><div class="map-filters">${cats.map(c => `<label class="category-check"><input type="checkbox" ${selectedMapCategories.size===0 || selectedMapCategories.has(c) ? 'checked' : ''} onchange="toggleMapCategory('${escapeJs(c)}', this.checked)"> ${getCategoryEmoji(c)} ${escapeHtml(c)}</label>`).join('')}</div></div>
+            <div id="map-filter-bar" class="closed" style="position:absolute; top:60px; left:12px; right:12px; z-index:499; border-radius:18px; overflow:hidden; max-height:0; transition:max-height 0.3s; background:var(--surface-solid); border:1px solid var(--border); box-shadow:var(--shadow-soft);"><div class="map-filters" style="padding:10px;">${cats.map(c => `<label class="category-check"><input type="checkbox" ${selectedMapCategories.size===0 || selectedMapCategories.has(c) ? 'checked' : ''} onchange="toggleMapCategory('${escapeJs(c)}', this.checked)"> ${getCategoryEmoji(c)} ${escapeHtml(c)}</label>`).join('')}</div></div>
             <div id="job-map" class="map-container" style="height:calc(100vh - 124px);"></div>
         </div>`;
     setTimeout(initMap, 50);
