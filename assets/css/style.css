@@ -541,7 +541,7 @@ select.form-input,
     overflow: hidden;
 }
 
-.map-filter-bar.closed { max-height: 0; padding: 0; }
+.map-filter-bar.closed { max-height: 0; padding: 0; border-bottom: none; }
 .map-filter-bar.open { max-height: 220px; padding: 10px 12px; }
 
 .map-filter-toggle {
