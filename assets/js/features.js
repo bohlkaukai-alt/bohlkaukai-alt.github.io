@@ -262,7 +262,7 @@ showRatingsScreen = async function() {
 };
 
 // ---------- STANDORT ----------
-function openLocationModal() {
+openLocationModal = function() {
     document.body.insertAdjacentHTML('beforeend', `<div class="modal-overlay" id="location-modal"><div class="modal-content"><h3>Standort & Umkreis</h3><input id="manual-city" class="form-input" placeholder="Stadt" value="${escapeHtml(userLocation?.name || localStorage.getItem('mf_city') || '')}"><select id="manual-radius" class="form-input">${getRadiusOptionsHtml()}</select><button class="btn btn-accent" onclick="saveLocationSettings()">Speichern</button><button class="btn btn-outline" onclick="getPreciseLocation(()=>{document.getElementById('location-modal')?.remove();showJobsScreen();})">GPS erkennen</button><button class="btn btn-outline" onclick="document.getElementById('location-modal').remove()">Abbrechen</button></div></div>`);
 }
 async function saveLocationSettings() {
