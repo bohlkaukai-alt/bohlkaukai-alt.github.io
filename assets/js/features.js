@@ -511,14 +511,13 @@ if ('serviceWorker' in navigator) { window.addEventListener('load',()=>navigator
 // ---------- Precise Location Modal Update ----------
 function openLocationModal() {
     const accuracyText = userLocation?.accuracy ? `ca. ${userLocation.accuracy} m genau` : 'Genauigkeit unbekannt';
-    const addressText = userLocation?.address || userLocation?.name || 'Noch kein Standort gespeichert';
+    const addressText = userLocation?.address || userLocation?.name || localStorage.getItem('mf_city') || 'Noch kein Standort gespeichert';
 
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
     modal.innerHTML = `
         <div class="modal-content">
-            <h2>📍 Standort</h2>
-            <p class="small-muted" style="margin:8px 0 12px">Aktueller Standort:</p>
+            <h2>📍 Standort & Umkreis</h2>
             <div class="location-preview-card">
                 <div class="big-pin">📍</div>
                 <div>
@@ -526,6 +525,9 @@ function openLocationModal() {
                     <p class="small-muted">${escapeHtml(accuracyText)}</p>
                 </div>
             </div>
+            <input id="manual-city" class="form-input" placeholder="Stadt eingeben" value="${escapeHtml(userLocation?.name || localStorage.getItem('mf_city') || '')}">
+            <select id="manual-radius" class="form-input">${getRadiusOptionsHtml()}</select>
+            <button class="btn btn-accent" onclick="saveLocationSettings()">Speichern</button>
             <button class="btn btn-primary" onclick="this.closest('.modal-overlay').remove(); refreshMyLocation()">🎯 Standort genauer bestimmen</button>
             <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">Schließen</button>
         </div>`;
