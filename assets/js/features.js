@@ -374,9 +374,81 @@ editProfileScreen = function() {
 };
 function selectProfileColor(c){ document.getElementById('profile-color').value=c; document.getElementById('live-avatar').style.background=c; }
 saveProfile = async function() { const payload={ name:document.getElementById('profile-name').value.trim(), city:document.getElementById('profile-city').value.trim(), bio:document.getElementById('profile-bio').value.trim(), profileColor:document.getElementById('profile-color').value }; if(!payload.name){showToast('Name eingeben');return;} await db.collection('users').doc(currentUser.uid).set(payload,{merge:true}); Object.assign(currentUser,payload); localStorage.setItem('mf_city', payload.city); showToast('Profil gespeichert'); navigateTo('profile'); };
+
 showSettingsScreen = function() {
-    updateHeader('settings'); const custom = getCustomCategories();
-    document.getElementById('main-content').innerHTML = `<div class="settings-page"><h2>Einstellungen</h2><div class="settings-item"><span>Wohnort</span><button onclick="openLocationModal()">Ändern</button></div><div class="settings-item"><span>Währung</span><select onchange="updateCurrency(this.value)">${Object.keys(currencySymbols).map(c => `<option value="${c}" ${c === currentCurrency ? 'selected' : ''}>${c}</option>`).join('')}</select></div><div class="settings-item" onclick="toggleTheme()"><span>Dark Mode</span><span id="theme-status-text">${document.body?.getAttribute('data-theme') === 'dark' ? 'An' : 'Aus'}</span></div><div class="settings-item"><span>Sounds</span><label class="switch"><input type="checkbox" ${soundsEnabled()?'checked':''} onchange="localStorage.setItem('mf_sounds', this.checked?'on':'off')"><i></i></label></div><div class="settings-item"><span>Benachrichtigungen</span><label class="switch"><input type="checkbox" ${notificationsEnabled()?'checked':''} onchange="localStorage.setItem('mf_notifications', this.checked?'on':'off')"><i></i></label></div><div class="settings-block"><h3>Eigene Kategorien</h3><div class="inline-form"><input id="new-category" class="form-input" placeholder="z. B. Fotografie 📸"><button class="btn btn-accent" onclick="addCustomCategory()">Hinzufügen</button></div>${custom.map(c=>`<div class="settings-item"><span>${escapeHtml(c)}</span><button onclick="removeCustomCategory('${escapeJs(c)}')">Löschen</button></div>`).join('')}</div><button class="btn btn-outline" onclick="installPwa()">App installieren</button><button class="btn btn-outline" onclick="startTutorial(true)">Tutorial ansehen</button>${isAdmin()?'<button class="btn btn-outline" onclick="showAdminScreen()">Admin-Modus</button>':''}<button class="btn btn-outline" onclick="navigateTo('feedback')">Feedback senden</button><button class="btn btn-danger" onclick="deleteProfile()">Profil löschen</button></div>`;
+    updateHeader('settings');
+    const custom = getCustomCategories();
+
+    document.getElementById('main-content').innerHTML = `
+        <div class="settings-page">
+            <h2>Einstellungen</h2>
+
+            ${isAdmin() ? `
+            <div class="settings-item">
+                <span>Admin-Modus</span>
+                <label class="switch">
+                    <input type="checkbox" ${localStorage.getItem('mf_admin_mode') === 'on' ? 'checked' : ''} onchange="localStorage.setItem('mf_admin_mode', this.checked?'on':'off'); showToast(this.checked?'Admin-Modus aktiviert':'Admin-Modus deaktiviert')">
+                    <i></i>
+                </label>
+            </div>
+            ` : ''}
+
+            <div class="settings-item">
+                <span>Wohnort</span>
+                <button onclick="openLocationModal()">Ändern</button>
+            </div>
+
+            <div class="settings-item">
+                <span>Währung</span>
+                <select onchange="updateCurrency(this.value)">
+                    ${Object.keys(currencySymbols).map(c => `
+                        <option value="${c}" ${c === currentCurrency ? 'selected' : ''}>${c}</option>
+                    `).join('')}
+                </select>
+            </div>
+
+            <div class="settings-item" onclick="toggleTheme()">
+                <span>Design</span>
+                <span id="theme-status-text">Darkmode ${document.body?.getAttribute('data-theme') === 'dark' ? 'An' : 'Aus'}</span>
+            </div>
+
+            <button class="btn btn-outline" onclick="startTutorial(true)">Tutorial ansehen</button>
+            <button class="btn btn-outline" onclick="navigateTo('feedback')">Feedback senden</button>
+
+            <div class="settings-block">
+                <h3>Eigene Kategorien</h3>
+                <div class="inline-form">
+                    <input id="new-category" class="form-input" placeholder="z. B. Fotografie 📸">
+                    <button class="btn btn-accent" onclick="addCustomCategory()">Hinzufügen</button>
+                </div>
+                ${custom.map(c => `
+                    <div class="settings-item">
+                        <span>${escapeHtml(c)}</span>
+                        <button onclick="removeCustomCategory('${escapeJs(c)}')">Löschen</button>
+                    </div>
+                `).join('')}
+            </div>
+
+            <div class="settings-item">
+                <span>Sounds</span>
+                <label class="switch">
+                    <input type="checkbox" ${soundsEnabled() ? 'checked' : ''} onchange="localStorage.setItem('mf_sounds', this.checked?'on':'off')">
+                    <i></i>
+                </label>
+            </div>
+
+            <div class="settings-item">
+                <span>Benachrichtigungen</span>
+                <label class="switch">
+                    <input type="checkbox" ${notificationsEnabled() ? 'checked' : ''} onchange="localStorage.setItem('mf_notifications', this.checked?'on':'off')">
+                    <i></i>
+                </label>
+            </div>
+
+            <button class="btn btn-outline" onclick="installPwa()">App installieren</button>
+            <button class="btn btn-danger" onclick="deleteProfile()">Profil löschen</button>
+
+        </div>`;
 };
 function addCustomCategory(){ const v=document.getElementById('new-category').value.trim(); if(!v)return; const list=getCustomCategories(); if(!list.includes(v)) list.push(v); saveCustomCategories(list); showSettingsScreen(); }
 function removeCustomCategory(c){ if(!confirm('Kategorie löschen?'))return; saveCustomCategories(getCustomCategories().filter(x=>x!==c)); showSettingsScreen(); }
