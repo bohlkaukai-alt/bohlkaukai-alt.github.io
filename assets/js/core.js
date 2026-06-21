@@ -31,7 +31,8 @@ const categoryColor = { 'Nachhilfe':'#4CAF50','Hundesitting':'#8D6E63','Babysitt
 
 function getCurrencySymbol() { return currencySymbols[currentCurrency] || '€'; }
 function formatPayment(amount) { return `${amount} ${getCurrencySymbol()}`; }
-function isAdmin() { return currentUser && adminEmails.includes(currentUser.email); }
+function isAdminAccount() { return currentUser && adminEmails.includes(currentUser.email); }
+function isAdmin() { return isAdminAccount() && localStorage.getItem('mf_admin_mode') === 'on'; }
 function saveViewedJobs() {
     const key = currentUser ? `mf_viewed_${currentUser.uid}` : 'mf_viewed_guest';
     localStorage.setItem(key, JSON.stringify(viewedJobs));
