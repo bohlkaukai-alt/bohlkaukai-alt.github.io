@@ -467,12 +467,20 @@ showSettingsScreen = function() {
     document.getElementById('main-content').innerHTML = `<div class="settings-page">
         <h2>Einstellungen</h2>
         <div class="card" style="cursor:auto">
-            <div class="settings-item"><span>Suchradius</span><select onchange="updateRadius(this.value)">${[...radiusOptions, 9999].map(r => `<option value="${r}" ${r === radiusFilter ? 'selected' : ''}>${r >= 9999 ? 'Alle' : r + ' km'}</option>`).join('')}</select></div>
+            ${isAdminAccount() ? `
+            <div class="settings-item">
+                <span>🛠️ Admin-Modus</span>
+                <label class="switch">
+                    <input type="checkbox" ${localStorage.getItem('mf_admin_mode') === 'on' ? 'checked' : ''} onchange="localStorage.setItem('mf_admin_mode', this.checked?'on':'off'); showToast(this.checked?'Admin-Modus aktiviert':'Admin-Modus deaktiviert')">
+                    <i></i>
+                </label>
+            </div>
+            ` : ''}
             <div class="settings-item"><span>Währung</span><select onchange="updateCurrency(this.value)">${Object.keys(currencySymbols).map(c => `<option value="${c}" ${c === currentCurrency ? 'selected' : ''}>${c}</option>`).join('')}</select></div>
             <div class="settings-item" onclick="toggleTheme()"><span>Design</span><span><span id="theme-status-text">${document.body?.getAttribute('data-theme') === 'dark' ? 'Darkmode' : 'Hellmodus'}</span> <span class="material-icons" style="vertical-align:middle;font-size:18px">contrast</span></span></div>
-            <div class="settings-item" onclick="openCookieSettings()"><span>🍪 Cookies & Speicher</span><span>Ändern</span></div>
             <div class="settings-item" onclick="startTutorial(true)"><span>🎓 Tutorial ansehen</span><span>›</span></div>
             <div class="settings-item" onclick="navigateTo('feedback')"><span>Feedback senden</span><span>›</span></div>
+            <div class="settings-item" onclick="openCookieSettings()"><span>🍪 Cookies</span><span>Ändern</span></div>
             <div class="settings-item" onclick="window.open('datenschutz.html','_blank')"><span>🔐 Datenschutzerklärung</span><span>Öffnen</span></div>
             <div class="settings-item" onclick="window.open('impressum.html','_blank')"><span>ℹ️ Impressum</span><span>Öffnen</span></div>
             <div class="settings-item danger-link" onclick="deleteMyAccount()"><span>🗑️ Account löschen</span><span>Löschen</span></div>
