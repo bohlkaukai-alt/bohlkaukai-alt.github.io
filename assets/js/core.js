@@ -175,22 +175,38 @@ async function geocodeAddress(query) {
 }
 
 function refreshMyLocation() {
-    showToast('Standort wird genau bestimmt...');
-    getPreciseLocation(() => {
-        const txt = userLocation?.accuracy ? `Standort aktualisiert: ca. ${userLocation.accuracy} m genau` : 'Standort aktualisiert';
-        showToast(txt);
-        if (currentPage === 'jobs') {
-            showJobsScreen();
-        } else if (currentPage === 'map') {
-            if (mapInstance && userLocation) {
+    showToast('GPS wird abgerufen...');
+    
+    if (!('geolocation' in navigator)) {
+        showToast('GPS nicht verfügbar');
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        pos => {
+            showToast(`GPS: ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)} (${Math.round(pos.coords.accuracy)}m)`);
+            userLocation = {
+                lat: pos.coords.latitude,
+                lng: pos.coords.longitude,
+                name: userLocation?.name || 'GPS',
+                address: userLocation?.address || 'GPS',
+                accuracy: Math.round(pos.coords.accuracy),
+                source: 'gps'
+            };
+            localStorage.setItem('mf_location', JSON.stringify(userLocation));
+            
+            if (currentPage === 'map' && mapInstance) {
                 mapInstance.flyTo([userLocation.lat, userLocation.lng], 14);
-            } else {
-                showMapScreen();
+                showToast('Karte bewegt!');
+            } else if (currentPage === 'jobs') {
+                showJobsScreen();
             }
-        } else {
-            updateHeader(currentPage);
-        }
-    }, true);
+        },
+        err => {
+            showToast('GPS Fehler: ' + err.code + ' - ' + err.message);
+        },
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+    );
 }
 function formatDate(value) {
     if (!value) return '';
