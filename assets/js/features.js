@@ -360,7 +360,9 @@ initMap = async function() {
     const el = document.getElementById('job-map'); if (!el || !window.L) return;
     if (!userLocation) userLocation = { lat: 51.89, lng: 10.17, name:'Seesen' };
     if (mapInstance) { mapInstance.remove(); mapInstance = null; }
-    mapInstance = L.map('job-map', { zoomControl: false }).setView([userLocation.lat,userLocation.lng], 12);
+    const startLat = window._realUserLat || userLocation.lat;
+    const startLng = window._realUserLng || userLocation.lng;
+    mapInstance = L.map('job-map', { zoomControl: false }).setView([startLat, startLng], 12);
     const street = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
     const sat = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
     L.tileLayer(mapTileMode === 'satellite' ? sat : street, { maxZoom: 19, attribution: mapTileMode === 'satellite' ? '&copy; Esri' : '&copy; OpenStreetMap' }).addTo(mapInstance);
