@@ -202,12 +202,46 @@ function refreshMyLocation() {
 
         showToast(accuracy ? `Standort: ca. ${accuracy} m genau` : 'Standort aktualisiert');
 
-        if (currentPage === 'map') {
-            if (mapInstance) {
-                mapInstance.flyTo([lat, lng], 14);
-            } else {
-                showMapScreen();
+        if (currentPage === 'map' && mapInstance) {
+            // Alten Standort-Marker entfernen
+            if (window._userLocationMarker) {
+                mapInstance.removeLayer(window._userLocationMarker);
+                window._userLocationMarker = null;
             }
+            if (window._userLocationCircle) {
+                mapInstance.removeLayer(window._userLocationCircle);
+                window._userLocationCircle = null;
+            }
+
+            // Blauer Punkt als neuer Standort-Marker
+            const blueIcon = L.divIcon({
+                className: '',
+                html: `<div style="
+                    width:16px; height:16px; border-radius:50%;
+                    background:#2563EB; border:3px solid #fff;
+                    box-shadow:0 0 0 3px rgba(37,99,235,0.35), 0 4px 12px rgba(37,99,235,0.5);
+                "></div>`,
+                iconSize: [16, 16],
+                iconAnchor: [8, 8]
+            });
+
+            window._userLocationCircle = L.circle([lat, lng], {
+                radius: accuracy || 40,
+                color: '#2563EB',
+                fillColor: '#2563EB',
+                fillOpacity: 0.12,
+                weight: 1.5,
+                opacity: 0.5
+            }).addTo(mapInstance);
+
+            window._userLocationMarker = L.marker([lat, lng], { icon: blueIcon, zIndexOffset: 10000 })
+                .addTo(mapInstance)
+                .bindPopup(`📍 Dein Standort${accuracy ? ` · ca. ${accuracy} m genau` : ''}`);
+
+            mapInstance.flyTo([lat, lng], 14);
+
+        } else if (currentPage === 'map') {
+            showMapScreen();
         } else if (currentPage === 'jobs') {
             showJobsScreen();
         }
@@ -219,6 +253,7 @@ function refreshMyLocation() {
         maximumAge: 0
     });
 }
+
 function formatDate(value) {
     if (!value) return '';
     const date = value.toDate ? value.toDate() : new Date(value);
