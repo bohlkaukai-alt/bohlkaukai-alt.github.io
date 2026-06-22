@@ -179,9 +179,17 @@ function refreshMyLocation() {
     getPreciseLocation(() => {
         const txt = userLocation?.accuracy ? `Standort aktualisiert: ca. ${userLocation.accuracy} m genau` : 'Standort aktualisiert';
         showToast(txt);
-        if (currentPage === 'jobs') showJobsScreen();
-        else if (currentPage === 'map') showMapScreen();
-        else updateHeader(currentPage);
+        if (currentPage === 'jobs') {
+            showJobsScreen();
+        } else if (currentPage === 'map') {
+            if (mapInstance && userLocation) {
+                mapInstance.flyTo([userLocation.lat, userLocation.lng], 14);
+            } else {
+                showMapScreen();
+            }
+        } else {
+            updateHeader(currentPage);
+        }
     }, true);
 }
 function formatDate(value) {
