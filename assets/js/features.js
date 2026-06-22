@@ -266,9 +266,51 @@ openLocationModal = function() {
     document.body.insertAdjacentHTML('beforeend', `<div class="modal-overlay" id="location-modal"><div class="modal-content"><h3>Standort & Umkreis</h3><input id="manual-city" class="form-input" placeholder="Stadt" value="${escapeHtml(userLocation?.name || localStorage.getItem('mf_city') || '')}"><select id="manual-radius" class="form-input">${getRadiusOptionsHtml()}</select><button class="btn btn-accent" onclick="saveLocationSettings()">Speichern</button><button class="btn btn-outline" onclick="getPreciseLocation(()=>{document.getElementById('location-modal')?.remove();showJobsScreen();})">GPS erkennen</button><button class="btn btn-outline" onclick="document.getElementById('location-modal').remove()">Abbrechen</button></div></div>`);
 }
 async function saveLocationSettings() {
-    const city = document.getElementById('manual-city').value.trim(); radiusFilter = parseInt(document.getElementById('manual-radius').value,10); localStorage.setItem('mf_radius', String(radiusFilter));
-    if (city) { const coords = await getRandomPointInCity(city); userLocation = { ...coords, name: city }; localStorage.setItem('mf_location', JSON.stringify(userLocation)); localStorage.setItem('mf_city', city); }
-    document.getElementById('location-modal')?.remove(); showToast('Standort gespeichert'); if (currentPage === 'jobs') showJobsScreen(); else if (currentPage === 'map') showMapScreen();
+    const city = document.getElementById('manual-city').value.trim();
+    radiusFilter = parseInt(document.getElementById('manual-radius').value, 10);
+    localStorage.setItem('mf_radius', String(radiusFilter));
+
+    if (city) {
+        const coords = await getRandomPointInCity(city);
+        userLocation = { ...coords, name: city };
+        localStorage.setItem('mf_location', JSON.stringify(userLocation));
+        localStorage.setItem('mf_city', city);
+
+        // Pin auf der Karte setzen falls Karte offen ist
+        if (currentPage === 'map' && mapInstance) {
+            // Alten Such-Pin entfernen
+            if (window._searchPin) {
+                mapInstance.removeLayer(window._searchPin);
+                window._searchPin = null;
+            }
+
+            // Prüfen ob gesuchter Ort nahe am echten GPS-Standort ist (< 2 km)
+            const realLat = window._realUserLat;
+            const realLng = window._realUserLng;
+            const isNearUser = realLat && realLng &&
+                calculateDistance(realLat, realLng, coords.lat, coords.lng) < 2;
+
+            if (!isNearUser) {
+                const searchIcon = L.divIcon({
+                    className: '',
+                    html: `<div style="width:14px;height:14px;border-radius:50%;background:#F97316;border:3px solid #fff;box-shadow:0 0 0 3px rgba(249,115,22,0.35),0 4px 12px rgba(249,115,22,0.5);"></div>`,
+                    iconSize: [14, 14],
+                    iconAnchor: [7, 7]
+                });
+                window._searchPin = L.marker([coords.lat, coords.lng], { icon: searchIcon })
+                    .addTo(mapInstance)
+                    .bindPopup(`📍 ${escapeHtml(city)}`);
+                mapInstance.flyTo([coords.lat, coords.lng], 13);
+            } else {
+                mapInstance.flyTo([coords.lat, coords.lng], 13);
+            }
+        }
+    }
+
+    document.getElementById('location-modal')?.remove();
+    showToast('Standort gespeichert');
+    if (currentPage === 'jobs') showJobsScreen();
+    else if (currentPage === 'map') showMapScreen();
 }
 
 // ---------- MAP ----------
