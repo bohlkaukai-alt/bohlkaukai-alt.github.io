@@ -284,7 +284,7 @@ showMapScreen = function() {
                 <button class="icon-circle" onclick="openMapSearch()" title="Ort suchen">
                     <span class="material-icons">search</span>
                 </button>
-                <button class="icon-circle" onclick="getPreciseLocation(()=>showMapScreen())" title="Mein Standort">
+                <button class="icon-circle" onclick="refreshMyLocation()" title="Mein Standort">
                     <span class="material-icons">my_location</span>
                 </button>
                 <button class="icon-circle" onclick="switchMapTileMode()" title="Kartenansicht wechseln">
