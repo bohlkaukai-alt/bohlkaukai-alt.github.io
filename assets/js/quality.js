@@ -440,8 +440,8 @@ showProfileScreen = function() {
         </div>
         <div class="card" onclick="navigateTo('my-jobs')"><strong>Meine Jobs</strong><p class="small-muted">Eigene Anzeigen verwalten</p></div>
         <div class="card" onclick="navigateTo('ratings')"><strong>Bewertungen</strong><p class="small-muted">Bewertungen ansehen</p></div>
-        <div class="card" onclick="navigateTo('settings')"><strong>Einstellungen</strong><p class="small-muted">Datenschutz, Cookies, Design, Feedback</p></div>
         <div class="card" onclick="navigateTo('edit-profile')"><strong>Profil bearbeiten</strong></div>
+        <div class="card" onclick="navigateTo('settings')"><strong>Einstellungen</strong><p class="small-muted">Datenschutz, Cookies, Design, Feedback</p></div>
         <button class="btn btn-danger" onclick="logout()">Abmelden</button>
     </div>`;
 
