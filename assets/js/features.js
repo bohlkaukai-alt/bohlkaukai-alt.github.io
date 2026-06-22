@@ -360,22 +360,63 @@ initMap = async function() {
     const el = document.getElementById('job-map'); if (!el || !window.L) return;
     if (!userLocation) userLocation = { lat: 51.89, lng: 10.17, name:'Seesen' };
     if (mapInstance) { mapInstance.remove(); mapInstance = null; }
+
     const startLat = window._realUserLat || userLocation.lat;
     const startLng = window._realUserLng || userLocation.lng;
+
     mapInstance = L.map('job-map', { zoomControl: false }).setView([startLat, startLng], 12);
     const street = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
     const sat = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
-    L.tileLayer(mapTileMode === 'satellite' ? sat : street, { maxZoom: 19, attribution: mapTileMode === 'satellite' ? '&copy; Esri' : '&copy; OpenStreetMap' }).addTo(mapInstance);
+    L.tileLayer(mapTileMode === 'satellite' ? sat : street, {
+        maxZoom: 19,
+        attribution: mapTileMode === 'satellite' ? '&copy; Esri' : '&copy; OpenStreetMap'
+    }).addTo(mapInstance);
+
     mapMarkersLayer = L.layerGroup().addTo(mapInstance);
+
+    // Blauer Punkt für echten GPS-Standort
     const blueIcon = L.divIcon({
-    className: '',
-    html: `<div style="width:16px;height:16px;border-radius:50%;background:#2563EB;border:3px solid #fff;box-shadow:0 0 0 3px rgba(37,99,235,0.35),0 4px 12px rgba(37,99,235,0.5);"></div>`,
-    iconSize: [16, 16],
-    iconAnchor: [8, 8]
-});
-window._userLocationMarker = L.marker([userLocation.lat, userLocation.lng], { icon: blueIcon, zIndexOffset: 10000 }).addTo(mapMarkersLayer).bindPopup('📍 Mein Standort');
+        className: '',
+        html: `<div style="width:16px;height:16px;border-radius:50%;background:#2563EB;border:3px solid #fff;box-shadow:0 0 0 3px rgba(37,99,235,0.35),0 4px 12px rgba(37,99,235,0.5);"></div>`,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+    });
+    window._userLocationMarker = L.marker([startLat, startLng], { icon: blueIcon, zIndexOffset: 10000 })
+        .addTo(mapMarkersLayer)
+        .bindPopup('📍 Mein Standort');
+
+    // Job-Marker laden
+    const focusJobId = currentPageData?.focusJobId || null;
+    let focusMarker = null;
+
     const snap = await db.collection('jobs').get();
-    snap.docs.forEach(d => { const j = { id:d.id, ...d.data() }; if (!j.lat || !j.lng || !['offen','reserviert'].includes(j.status || 'offen')) return; if (selectedMapCategories.size && !selectedMapCategories.has(j.category)) return; const icon = L.divIcon({ className:'job-map-pin', html:`<span style="background:${getCategoryColor(j.category)}">${getCategoryEmoji(j.category)}</span>`, iconSize:[34,34], iconAnchor:[17,17] }); L.marker([j.lat,j.lng], {icon}).addTo(mapMarkersLayer).bindPopup(`<strong>${escapeHtml(j.title)}</strong><br>${escapeHtml(j.category)}<br>${escapeHtml(j.location)}<br>${formatPayment(j.payment)}<br><button onclick="navigateTo('job-detail','${j.id}')">Details ansehen</button>`); });
+    snap.docs.forEach(d => {
+        const j = { id: d.id, ...d.data() };
+        if (!j.lat || !j.lng || !['offen','reserviert'].includes(j.status || 'offen')) return;
+        if (selectedMapCategories.size && !selectedMapCategories.has(j.category)) return;
+
+        const icon = L.divIcon({
+            className: 'job-map-pin',
+            html: `<span style="background:${getCategoryColor(j.category)}">${getCategoryEmoji(j.category)}</span>`,
+            iconSize: [34, 34],
+            iconAnchor: [17, 17]
+        });
+
+        const marker = L.marker([j.lat, j.lng], { icon })
+            .addTo(mapMarkersLayer)
+            .bindPopup(`<strong>${escapeHtml(j.title)}</strong><br>${escapeHtml(j.category)}<br>${escapeHtml(j.location)}<br>${formatPayment(j.payment)}<br><button onclick="navigateTo('job-detail','${j.id}')">Details ansehen</button>`);
+
+        if (j.id === focusJobId) {
+            focusMarker = marker;
+        }
+    });
+
+    // Auf den Job fokussieren falls vorhanden
+    if (focusMarker) {
+        const pos = focusMarker.getLatLng();
+        mapInstance.setView([pos.lat, pos.lng], 15);
+        focusMarker.openPopup();
+    }
 };
 
 // ---------- CHAT ----------
