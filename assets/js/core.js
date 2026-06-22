@@ -175,38 +175,49 @@ async function geocodeAddress(query) {
 }
 
 function refreshMyLocation() {
-    showToast('GPS wird abgerufen...');
-    
-    if (!('geolocation' in navigator)) {
-        showToast('GPS nicht verfügbar');
-        return;
-    }
+    showToast('Standort wird bestimmt...');
+    localStorage.removeItem('mf_location');
 
-    navigator.geolocation.getCurrentPosition(
-        pos => {
-            showToast(`GPS: ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)} (${Math.round(pos.coords.accuracy)}m)`);
-            userLocation = {
-                lat: pos.coords.latitude,
-                lng: pos.coords.longitude,
-                name: userLocation?.name || 'GPS',
-                address: userLocation?.address || 'GPS',
-                accuracy: Math.round(pos.coords.accuracy),
-                source: 'gps'
-            };
-            localStorage.setItem('mf_location', JSON.stringify(userLocation));
-            
-            if (currentPage === 'map' && mapInstance) {
-                mapInstance.flyTo([userLocation.lat, userLocation.lng], 14);
-                showToast('Karte bewegt!');
-            } else if (currentPage === 'jobs') {
-                showJobsScreen();
+    navigator.geolocation.getCurrentPosition(async pos => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        const accuracy = Math.round(pos.coords.accuracy || 0);
+
+        let name = 'Mein Standort';
+        let address = '';
+        try {
+            const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=de`;
+            const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
+            const data = await resp.json();
+            const a = data.address || {};
+            name = a.city || a.town || a.village || a.municipality || a.county || 'Mein Standort';
+            const road = a.road || '';
+            const house = a.house_number || '';
+            const postcode = a.postcode || '';
+            address = [road && (road + (house ? ' ' + house : '')), postcode, name].filter(Boolean).join(', ');
+        } catch (e) {}
+
+        userLocation = { lat, lng, name, address: address || name, accuracy, source: 'gps' };
+        localStorage.setItem('mf_location', JSON.stringify(userLocation));
+
+        showToast(accuracy ? `Standort: ca. ${accuracy} m genau` : 'Standort aktualisiert');
+
+        if (currentPage === 'map') {
+            if (mapInstance) {
+                mapInstance.flyTo([lat, lng], 14);
+            } else {
+                showMapScreen();
             }
-        },
-        err => {
-            showToast('GPS Fehler: ' + err.code + ' - ' + err.message);
-        },
-        { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
-    );
+        } else if (currentPage === 'jobs') {
+            showJobsScreen();
+        }
+    }, err => {
+        showToast('GPS nicht verfügbar: ' + (err.code === 1 ? 'Berechtigung verweigert' : 'Fehler ' + err.code));
+    }, {
+        enableHighAccuracy: true,
+        timeout: 20000,
+        maximumAge: 0
+    });
 }
 function formatDate(value) {
     if (!value) return '';
