@@ -323,7 +323,13 @@ initMap = async function() {
     const sat = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
     L.tileLayer(mapTileMode === 'satellite' ? sat : street, { maxZoom: 19, attribution: mapTileMode === 'satellite' ? '&copy; Esri' : '&copy; OpenStreetMap' }).addTo(mapInstance);
     mapMarkersLayer = L.layerGroup().addTo(mapInstance);
-    L.marker([userLocation.lat,userLocation.lng]).addTo(mapMarkersLayer).bindPopup('Mein Standort');
+    const blueIcon = L.divIcon({
+    className: '',
+    html: `<div style="width:16px;height:16px;border-radius:50%;background:#2563EB;border:3px solid #fff;box-shadow:0 0 0 3px rgba(37,99,235,0.35),0 4px 12px rgba(37,99,235,0.5);"></div>`,
+    iconSize: [16, 16],
+    iconAnchor: [8, 8]
+});
+window._userLocationMarker = L.marker([userLocation.lat, userLocation.lng], { icon: blueIcon, zIndexOffset: 10000 }).addTo(mapMarkersLayer).bindPopup('📍 Mein Standort');
     const snap = await db.collection('jobs').get();
     snap.docs.forEach(d => { const j = { id:d.id, ...d.data() }; if (!j.lat || !j.lng || !['offen','reserviert'].includes(j.status || 'offen')) return; if (selectedMapCategories.size && !selectedMapCategories.has(j.category)) return; const icon = L.divIcon({ className:'job-map-pin', html:`<span style="background:${getCategoryColor(j.category)}">${getCategoryEmoji(j.category)}</span>`, iconSize:[34,34], iconAnchor:[17,17] }); L.marker([j.lat,j.lng], {icon}).addTo(mapMarkersLayer).bindPopup(`<strong>${escapeHtml(j.title)}</strong><br>${escapeHtml(j.category)}<br>${escapeHtml(j.location)}<br>${formatPayment(j.payment)}<br><button onclick="navigateTo('job-detail','${j.id}')">Details ansehen</button>`); });
 };
