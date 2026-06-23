@@ -460,10 +460,105 @@ showProfileScreen = async function() {
     document.getElementById('main-content').innerHTML = `<div class="profile-page"><div class="card profile-head" style="cursor:auto"><div class="profile-avatar" style="background:${escapeHtml(color)}">${escapeHtml((currentUser?.name || '?').charAt(0).toUpperCase())}</div><h2>${escapeHtml(currentUser?.name || '')}</h2><p class="small-muted">${escapeHtml(currentUser?.city || localStorage.getItem('mf_city') || '')}</p><p>${escapeHtml(currentUser?.bio || '')}</p>${isAdmin()?'<span class="admin-badge">Admin</span>':''}</div><div class="stats-grid"><div class="card"><strong>${activeJobs}</strong><span>Aktive Jobs</span></div><div class="card"><strong>⭐ ${avg}</strong><span>Bewertung</span></div><div class="card"><strong>${ratings.length}</strong><span>Anzahl</span></div></div><div class="card" onclick="navigateTo('my-jobs')"><strong>Meine Jobs</strong><p class="small-muted">Eigene Anzeigen verwalten</p></div><div class="card" onclick="navigateTo('ratings')"><strong>Bewertungen</strong><p class="small-muted">Bewertungen ansehen</p></div><div class="card" onclick="navigateTo('edit-profile')"><strong>Profil bearbeiten</strong></div><div class="card" onclick="navigateTo('settings')"><strong>Einstellungen</strong><p class="small-muted">Dark Mode, Sounds, Kategorien, Wohnort</p></div><button class="btn btn-danger" onclick="logout()">Abmelden</button></div>`;
 };
 editProfileScreen = function() {
-    updateHeader('edit-profile'); const colors=['#2563EB','#EF4444','#F97316','#22C55E','#7C3AED','#EC4899','#0EA5E9','#14B8A6','#64748B','#111827'];
-    document.getElementById('main-content').innerHTML = `<div class="form-page"><h2>Profil bearbeiten</h2><div class="profile-avatar live-avatar" id="live-avatar" style="background:${escapeHtml(currentUser.profileColor||'#2563EB')}">${escapeHtml((currentUser.name||'?').charAt(0).toUpperCase())}</div><input id="profile-name" class="form-input" value="${escapeHtml(currentUser?.name || '')}" placeholder="Name" oninput="document.getElementById('live-avatar').textContent=this.value.charAt(0).toUpperCase()||'?' "><input id="profile-city" class="form-input" value="${escapeHtml(currentUser?.city || localStorage.getItem('mf_city') || '')}" placeholder="Wohnort"><textarea id="profile-bio" class="form-textarea" placeholder="Bio">${escapeHtml(currentUser?.bio || '')}</textarea><div class="color-grid">${colors.map(c=>`<button class="color-dot" style="background:${c}" onclick="selectProfileColor('${c}')"></button>`).join('')}</div><input id="profile-color" type="hidden" value="${escapeHtml(currentUser.profileColor||'#2563EB')}"><button class="btn btn-accent" onclick="saveProfile()">Speichern</button></div>`;
+    updateHeader('edit-profile');
+    const colors = ['#2563EB','#EF4444','#F97316','#22C55E','#7C3AED','#EC4899','#0EA5E9','#14B8A6','#64748B','#111827'];
+    const currentColor = currentUser.profileColor || '#2563EB';
+    const isGradient = currentColor.includes('gradient');
+    
+    // Aktuelle Farben aus Gradient extrahieren oder Einzelfarbe
+    let color1 = '#2563EB';
+    let color2 = '#F97316';
+    if (isGradient) {
+        const matches = currentColor.match(/#[0-9A-Fa-f]{6}/g);
+        if (matches && matches.length >= 2) { color1 = matches[0]; color2 = matches[1]; }
+    } else {
+        color1 = currentColor;
+    }
+
+    document.getElementById('main-content').innerHTML = `<div class="form-page">
+        <h2>Profil bearbeiten</h2>
+        <div class="profile-avatar live-avatar" id="live-avatar" style="background:${escapeHtml(currentColor)}">${escapeHtml((currentUser.name||'?').charAt(0).toUpperCase())}</div>
+        <input id="profile-name" class="form-input" value="${escapeHtml(currentUser?.name || '')}" placeholder="Name" oninput="document.getElementById('live-avatar').textContent=this.value.charAt(0).toUpperCase()||'?'">
+        <input id="profile-city" class="form-input" value="${escapeHtml(currentUser?.city || localStorage.getItem('mf_city') || '')}" placeholder="Wohnort">
+        <textarea id="profile-bio" class="form-textarea" placeholder="Bio">${escapeHtml(currentUser?.bio || '')}</textarea>
+
+        <p style="font-size:13px;color:var(--text-secondary);margin:8px 0 4px">Farbe 1 (Start)</p>
+        <div class="color-grid" id="color-grid-1">${colors.map(c => `
+            <button class="color-dot" style="background:${c};${c === color1 ? 'border:3px solid var(--text);transform:scale(1.2)' : ''}" onclick="selectProfileColor1('${c}')"></button>
+        `).join('')}</div>
+
+        <p style="font-size:13px;color:var(--text-secondary);margin:12px 0 4px">Farbe 2 (Ende) — optional</p>
+        <div class="color-grid" id="color-grid-2">${colors.map(c => `
+            <button class="color-dot" style="background:${c};${c === color2 ? 'border:3px solid var(--text);transform:scale(1.2)' : ''}" onclick="selectProfileColor2('${c}')"></button>
+        `).join('')}</div>
+
+        <div style="display:flex;gap:8px;margin:12px 0;">
+            <button class="btn btn-outline" style="flex:1" onclick="clearProfileColor2()">Nur Farbe 1</button>
+            <button class="btn btn-outline" style="flex:1" onclick="swapProfileColors()">↔ Tauschen</button>
+        </div>
+
+        <input id="profile-color" type="hidden" value="${escapeHtml(currentColor)}">
+        <input id="profile-color1" type="hidden" value="${escapeHtml(color1)}">
+        <input id="profile-color2" type="hidden" value="${escapeHtml(color2)}">
+
+        <button class="btn btn-accent" onclick="saveProfile()">Speichern</button>
+    </div>`;
 };
-function selectProfileColor(c){ document.getElementById('profile-color').value=c; document.getElementById('live-avatar').style.background=c; }
+
+function selectProfileColor1(c) {
+    document.getElementById('profile-color1').value = c;
+    document.querySelectorAll('#color-grid-1 .color-dot').forEach(b => {
+        b.style.border = b.style.background === c || b.style.background.includes(c) ? '3px solid var(--text)' : '';
+        b.style.transform = b.style.background === c || b.style.background.includes(c) ? 'scale(1.2)' : '';
+    });
+    updateProfileGradient();
+}
+
+function selectProfileColor2(c) {
+    document.getElementById('profile-color2').value = c;
+    document.querySelectorAll('#color-grid-2 .color-dot').forEach(b => {
+        b.style.border = b.style.background === c || b.style.background.includes(c) ? '3px solid var(--text)' : '';
+        b.style.transform = b.style.background === c || b.style.background.includes(c) ? 'scale(1.2)' : '';
+    });
+    updateProfileGradient();
+}
+
+function clearProfileColor2() {
+    document.getElementById('profile-color2').value = '';
+    document.querySelectorAll('#color-grid-2 .color-dot').forEach(b => {
+        b.style.border = '';
+        b.style.transform = '';
+    });
+    updateProfileGradient();
+}
+
+function swapProfileColors() {
+    const c1 = document.getElementById('profile-color1').value;
+    const c2 = document.getElementById('profile-color2').value;
+    if (!c2) return;
+    document.getElementById('profile-color1').value = c2;
+    document.getElementById('profile-color2').value = c1;
+    updateProfileGradient();
+    // Markierungen neu setzen
+    document.querySelectorAll('#color-grid-1 .color-dot').forEach(b => {
+        const match = b.style.background.includes(c2);
+        b.style.border = match ? '3px solid var(--text)' : '';
+        b.style.transform = match ? 'scale(1.2)' : '';
+    });
+    document.querySelectorAll('#color-grid-2 .color-dot').forEach(b => {
+        const match = b.style.background.includes(c1);
+        b.style.border = match ? '3px solid var(--text)' : '';
+        b.style.transform = match ? 'scale(1.2)' : '';
+    });
+}
+
+function updateProfileGradient() {
+    const c1 = document.getElementById('profile-color1').value || '#2563EB';
+    const c2 = document.getElementById('profile-color2').value;
+    const gradient = c2 ? `linear-gradient(135deg, ${c1}, ${c2})` : c1;
+    document.getElementById('profile-color').value = gradient;
+    document.getElementById('live-avatar').style.background = gradient;
+}
 saveProfile = async function() { const payload={ name:document.getElementById('profile-name').value.trim(), city:document.getElementById('profile-city').value.trim(), bio:document.getElementById('profile-bio').value.trim(), profileColor:document.getElementById('profile-color').value }; if(!payload.name){showToast('Name eingeben');return;} await db.collection('users').doc(currentUser.uid).set(payload,{merge:true}); Object.assign(currentUser,payload); localStorage.setItem('mf_city', payload.city); showToast('Profil gespeichert'); navigateTo('profile'); };
 
 showSettingsScreen = function() {
