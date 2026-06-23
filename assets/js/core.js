@@ -2,10 +2,6 @@
 const firebaseConfig = window.MINIJOB_FIREBASE_CONFIG || {};
 firebase.initializeApp(firebaseConfig);
 
-// --- APP CHECK HIER AKTIVIEREN ---
-const appCheck = firebase.appCheck();
-appCheck.activate('6Lcjey8tAAAAAGJk8QXPnka-nLMQFxxyOoEHJ-7x', true);
-// ---------------------------------
 
 const auth = firebase.auth();
 const db = firebase.firestore();
