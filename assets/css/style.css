@@ -171,6 +171,11 @@ body::before {
     overflow-y: auto;
     padding-bottom: 8px;
     scroll-behavior: smooth;
+    transition: opacity .2s ease, transform .2s ease;
+}
+.main-content.page-fade-out {
+    opacity: 0;
+    transform: translateY(6px);
 }
 
 .main-content::-webkit-scrollbar,
@@ -1192,7 +1197,7 @@ body[data-device="desktop"] .profile-page {
 }
 
 body[data-device="desktop"] .map-container {
-    height: calc(100vh - 162px);
+    height: calc(100vh - 340px);
 }
 
 @media (min-width: 1350px) {
