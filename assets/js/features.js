@@ -123,7 +123,7 @@ showJobsScreen = function() {
     const cats = getAllCategories();
     document.getElementById('main-content').innerHTML = `
         <div style="display:flex; gap:8px; padding:10px 14px 6px; align-items:center;">
-            <button class="icon-circle" style="flex-shrink:0;" onclick="toggleJobSearch()" aria-label="Suchen">
+            <button class="icon-circle search-toggle-btn" style="flex-shrink:0;" onclick="toggleJobSearch()" aria-label="Suchen">
                 <span class="material-icons">search</span>
             </button>
             <div class="start-type-buttons" style="flex:1; margin:0; padding:4px;">
@@ -652,11 +652,11 @@ function getTutorialSteps(){
     return [
         { title:'🏠 Navigation', text:'Hier wechselst du zwischen Start, Karte, Neu, Chat und Profil.', page:'jobs', selector:'#bottom-nav' },
         { title:'💼 / 🙋 Filter', text:'Hier wählst du aus, ob du Arbeit geben, Hilfe suchen oder alles sehen möchtest.', page:'jobs', selector:'.start-type-buttons' },
-        { title:'🔍 Suche', text:'Diese Suchleiste filtert Jobs sofort nach Titel und Beschreibung.', page:'jobs', selector:'#job-search' },
+        { title:'🔍 Suche', text:'Tippe hier um Jobs nach Titel und Beschreibung zu filtern.', page:'jobs', selector:'.search-toggle-btn', onShow(){ document.querySelector('.search-toggle-btn')?.click(); } },
         { title:'🔥 Kategorien', text:'Mit diesen Chips filterst du die Jobs nach Kategorie.', page:'jobs', selector:'.filter-scroll' },
         { title:'📍 Standort', text:'Hier änderst du deinen Ort und den Suchradius.', page:'jobs', selector:'.location-pill' },
         { title:'🗺️ Karte', text:'Über diesen Button öffnest du die Kartenansicht.', page:'jobs', selector:'.nav-item[data-page="map"]' },
-        { title:'✏️ Job erstellen', text:'Über „Neu“ erstellst du eine eigene Anzeige.', page:'jobs', selector:'.nav-item[data-page="create"]' },
+        { title:'✏️ Job erstellen', text:'Über „Neu" erstellst du eine eigene Anzeige.', page:'jobs', selector:'.nav-item[data-page="create"]' },
         { title:'📝 Titel', text:'Hier trägst du beim Erstellen den Titel deiner Anzeige ein.', page:'create', selector:'#job-title' },
         { title:'🏷️ Kategorie', text:'Hier wählst du eine Kategorie für deine Anzeige aus.', page:'create', selector:'#job-category' },
         { title:'💬 Chats', text:'Hier findest du Unterhaltungen, Bewerbungen und Nachrichten.', page:'jobs', selector:'.nav-item[data-page="chats"]' },
@@ -672,13 +672,55 @@ function getTutorialSteps(){
 function startTutorial(force){
     if(force) localStorage.removeItem('mf_tutorial_done');
     window.__tutorialSteps = getTutorialSteps();
-    showTutorialStep(0, window.__tutorialSteps);
+    window.__tutorialIndex = 0;
+    ensureTutorialOverlay();
+    applyTutorialStep(0, false);
+}
+
+function ensureTutorialOverlay(){
+    if(document.getElementById('tutorial-overlay')) return;
+    const o = document.createElement('div');
+    o.id = 'tutorial-overlay';
+    o.className = 'tutorial-overlay';
+    o.innerHTML = `
+        <div class="tutorial-shade tutorial-shade-top"></div>
+        <div class="tutorial-shade tutorial-shade-left"></div>
+        <div class="tutorial-shade tutorial-shade-right"></div>
+        <div class="tutorial-shade tutorial-shade-bottom"></div>
+        <div class="tutorial-frame tutorial-frame-enter"></div>
+        <div class="tutorial-box tutorial-box-floating tut-initial">
+            <div class="tut-content tut-fading">
+                <h3 class="tut-title"></h3>
+                <p class="tut-text"></p>
+                <div class="tutorial-progress"><span class="tut-step"></span><span class="tut-pct"></span></div>
+                <div class="tutorial-progress-bar"><i class="tut-bar"></i></div>
+                <div class="tutorial-actions">
+                    <button class="btn btn-outline" onclick="finishTutorial()">Überspringen</button>
+                    <button class="btn btn-outline tut-btn-back" onclick="showTutorialStep(window.__tutorialIndex-1, window.__tutorialSteps)">Zurück</button>
+                    <button class="btn btn-accent tut-btn-next" onclick="showTutorialStep(window.__tutorialIndex+1, window.__tutorialSteps)">Weiter</button>
+                </div>
+            </div>
+        </div>`;
+    document.body.appendChild(o);
+    // Trigger initial entrance animations
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            const content = o.querySelector('.tut-content');
+            if(content) content.classList.remove('tut-fading');
+        });
+    });
 }
 
 function finishTutorial(){
     localStorage.setItem('mf_tutorial_done','yes');
-    document.getElementById('tutorial-overlay')?.remove();
-    document.querySelectorAll('.tutorial-target-active').forEach(el => el.classList.remove('tutorial-target-active'));
+    const o = document.getElementById('tutorial-overlay');
+    if(o){
+        o.classList.add('tutorial-exiting');
+        document.querySelectorAll('.tutorial-target-active').forEach(el => el.classList.remove('tutorial-target-active'));
+        setTimeout(() => o.remove(), 300);
+    }
+    window.__tutorialSteps = null;
+    window.__tutorialIndex = null;
 }
 
 function showTutorialStep(i, steps){
@@ -686,78 +728,142 @@ function showTutorialStep(i, steps){
     if(i >= steps.length){ finishTutorial(); return; }
     if(i < 0) i = 0;
     window.__tutorialSteps = steps;
-    window.__tutorialIndex = i;
-    const step = steps[i];
+    const needsPageChange = steps[i].page && currentPage !== steps[i].page;
 
-    if(step.page && currentPage !== step.page){
-        navigateTo(step.page, null, false);
-        setTimeout(() => showTutorialStep(i, steps), 260);
-        return;
+    ensureTutorialOverlay();
+
+    if(needsPageChange){
+        document.querySelectorAll('.tutorial-target-active').forEach(el => el.classList.remove('tutorial-target-active'));
+        navigateTo(steps[i].page, null, false);
+        setTimeout(() => applyTutorialStep(i, true), 250);
+    } else {
+        applyTutorialStep(i, true);
     }
+}
 
-    document.getElementById('tutorial-overlay')?.remove();
+function applyTutorialStep(i, animate){
+    const steps = window.__tutorialSteps;
+    if(!steps) return;
+    const step = steps[i];
+    window.__tutorialIndex = i;
+
     document.querySelectorAll('.tutorial-target-active').forEach(el => el.classList.remove('tutorial-target-active'));
 
     requestAnimationFrame(() => {
         let target = step.selector ? document.querySelector(step.selector) : null;
-        if(!target){
-            target = document.getElementById('app') || document.body;
-        }
+        if(!target) target = document.getElementById('app') || document.body;
         try { target.scrollIntoView({ block:'center', inline:'center', behavior:'auto' }); } catch(e) {}
-setTimeout(() => renderTutorialOverlay(i, steps, target), 80);
+        if(step.onShow) step.onShow();
+
+        setTimeout(() => {
+            const o = document.getElementById('tutorial-overlay');
+            if(!o) return;
+
+            const pad = 8;
+            const r = target.getBoundingClientRect();
+            const ft = Math.max(4, r.top - pad);
+            const fl = Math.max(4, r.left - pad);
+            const fr = Math.min(window.innerWidth - 4, r.right + pad);
+            const fb = Math.min(window.innerHeight - 4, r.bottom + pad);
+            const fw = Math.max(40, fr - fl);
+            const fh = Math.max(40, fb - ft);
+
+            target.classList.add('tutorial-target-active');
+
+            const boxW = Math.min(340, window.innerWidth - 32);
+            const boxH = 260;
+            const gap = 16;
+            const isTall = fh > fw * 1.5;
+            let boxTop, boxLeft;
+
+            if(isTall){
+                const spaceRight = window.innerWidth - fr - gap;
+                const spaceLeft = fl - gap;
+                if(spaceRight >= boxW + 12){ boxLeft = fr + gap; boxTop = Math.max(8, Math.min(ft + fh / 2 - boxH / 2, window.innerHeight - boxH - 8)); }
+                else if(spaceLeft >= boxW + 12){ boxLeft = fl - gap - boxW; boxTop = Math.max(8, Math.min(ft + fh / 2 - boxH / 2, window.innerHeight - boxH - 8)); }
+                else { boxLeft = Math.max(8, fl); boxTop = Math.max(8, ft - gap - boxH); }
+            } else {
+                const spaceAbove = ft - gap;
+                const spaceBelow = window.innerHeight - fb - gap;
+                if(spaceAbove >= boxH + 12) boxTop = ft - gap - boxH;
+                else if(spaceBelow >= boxH + 12) boxTop = fb + gap;
+                else boxTop = Math.max(8, Math.min(ft - gap - boxH, window.innerHeight - boxH - 8));
+                boxTop = Math.max(8, Math.min(boxTop, window.innerHeight - boxH - 8));
+                const targetCenterX = fl + fw / 2;
+                boxLeft = targetCenterX - boxW / 2;
+                boxLeft = Math.max(8, Math.min(boxLeft, window.innerWidth - boxW - 8));
+            }
+
+            const shadeTop = o.querySelector('.tutorial-shade-top');
+            const shadeLeft = o.querySelector('.tutorial-shade-left');
+            const shadeRight = o.querySelector('.tutorial-shade-right');
+            const shadeBottom = o.querySelector('.tutorial-shade-bottom');
+            const frame = o.querySelector('.tutorial-frame');
+            const box = o.querySelector('.tutorial-box-floating');
+            const content = o.querySelector('.tut-content');
+
+            if(animate){
+                frame.style.transition = 'top .32s cubic-bezier(.4,0,.2,1), left .32s cubic-bezier(.4,0,.2,1), width .32s cubic-bezier(.4,0,.2,1), height .32s cubic-bezier(.4,0,.2,1)';
+                shadeTop.style.transition = shadeLeft.style.transition = shadeRight.style.transition = shadeBottom.style.transition = 'all .32s ease';
+                box.style.transition = 'left .35s cubic-bezier(.4,0,.2,1), top .35s cubic-bezier(.4,0,.2,1)';
+
+                content.classList.add('tut-fading');
+            } else {
+                frame.style.transition = 'none';
+                shadeTop.style.transition = shadeLeft.style.transition = shadeRight.style.transition = shadeBottom.style.transition = 'none';
+                box.style.transition = 'none';
+            }
+
+            shadeTop.style.height = ft + 'px';
+            shadeLeft.style.top = ft + 'px'; shadeLeft.style.left = '0'; shadeLeft.style.width = fl + 'px'; shadeLeft.style.height = fh + 'px';
+            shadeRight.style.top = ft + 'px'; shadeRight.style.left = fr + 'px'; shadeRight.style.width = Math.max(0, window.innerWidth - fr) + 'px'; shadeRight.style.height = fh + 'px';
+            shadeBottom.style.top = fb + 'px'; shadeBottom.style.height = Math.max(0, window.innerHeight - fb) + 'px';
+
+            frame.style.top = ft + 'px';
+            frame.style.left = fl + 'px';
+            frame.style.width = fw + 'px';
+            frame.style.height = fh + 'px';
+
+            box.style.left = boxLeft + 'px';
+            box.style.top = boxTop + 'px';
+
+            const updateText = () => {
+                o.querySelector('.tut-title').innerHTML = step.title;
+                o.querySelector('.tut-text').textContent = step.text;
+                o.querySelector('.tut-step').textContent = `Schritt ${i+1}/${steps.length}`;
+                o.querySelector('.tut-pct').textContent = Math.round(((i+1)/steps.length)*100) + '%';
+                o.querySelector('.tut-bar').style.width = ((i+1)/steps.length)*100 + '%';
+                o.querySelector('.tut-btn-back').style.display = i > 0 ? '' : 'none';
+                const nextBtn = o.querySelector('.tut-btn-next');
+                nextBtn.textContent = i === steps.length - 1 ? 'Fertig' : 'Weiter';
+            };
+
+            if(animate){
+                setTimeout(() => { updateText(); content.classList.remove('tut-fading'); }, 160);
+            } else {
+                updateText();
+                requestAnimationFrame(() => { content.classList.remove('tut-fading'); });
+            }
+        }, animate ? 50 : 0);
     });
 }
 
-function renderTutorialOverlay(i, steps, target){
+function updateTutorialContent(o, i, steps){
     const step = steps[i];
-    document.getElementById('tutorial-overlay')?.remove();
-    document.querySelectorAll('.tutorial-target-active').forEach(el => el.classList.remove('tutorial-target-active'));
-
-    const margin = 10;
-    const r = target.getBoundingClientRect();
-    const top = Math.max(8, r.top - margin);
-    const left = Math.max(8, r.left - margin);
-    const right = Math.min(window.innerWidth - 8, r.right + margin);
-    const bottom = Math.min(window.innerHeight - 8, r.bottom + margin);
-    const width = Math.max(44, right - left);
-    const height = Math.max(44, bottom - top);
-
-    target.classList.add('tutorial-target-active');
-
-    const spaceBelow = window.innerHeight - bottom;
-    const boxTop = spaceBelow > 230 ? bottom + 18 : Math.max(16, top - 250);
-    const boxSide = left + width / 2 > window.innerWidth / 2 ? 'right' : 'left';
-    const boxStyle = boxSide === 'right'
-        ? `right:${Math.max(16, window.innerWidth - right)}px;top:${boxTop}px;`
-        : `left:${Math.max(16, left)}px;top:${boxTop}px;`;
-
-    const overlay = document.createElement('div');
-    overlay.id = 'tutorial-overlay';
-    overlay.className = 'tutorial-overlay tutorial-overlay-highlight';
-    overlay.innerHTML = `
-        <div class="tutorial-shade tutorial-shade-top" style="height:${top}px"></div>
-        <div class="tutorial-shade tutorial-shade-left" style="top:${top}px;left:0;width:${left}px;height:${height}px"></div>
-        <div class="tutorial-shade tutorial-shade-right" style="top:${top}px;left:${right}px;width:${Math.max(0, window.innerWidth - right)}px;height:${height}px"></div>
-        <div class="tutorial-shade tutorial-shade-bottom" style="top:${bottom}px;height:${Math.max(0, window.innerHeight - bottom)}px"></div>
-        <div class="tutorial-frame" style="top:${top}px;left:${left}px;width:${width}px;height:${height}px"></div>
-        <div class="tutorial-box tutorial-box-floating" style="${boxStyle}">
-            <h3>${escapeHtml(step.title)}</h3>
-            <p>${escapeHtml(step.text)}</p>
-            <div class="tutorial-progress"><span>Schritt ${i+1}/${steps.length}</span><span>${Math.round(((i+1)/steps.length)*100)}%</span></div>
-            <div class="tutorial-progress-bar"><i style="width:${((i+1)/steps.length)*100}%"></i></div>
-            <div class="tutorial-actions">
-                <button class="btn btn-outline" onclick="finishTutorial()">Überspringen</button>
-                ${i>0 ? `<button class="btn btn-outline" onclick="showTutorialStep(${i-1}, window.__tutorialSteps)">Zurück</button>` : ''}
-                <button class="btn btn-accent" onclick="showTutorialStep(${i+1}, window.__tutorialSteps)">${i===steps.length-1?'Fertig':'Weiter'}</button>
-            </div>
-        </div>`;
-    document.body.appendChild(overlay);
+    o.querySelector('.tut-title').innerHTML = step.title;
+    o.querySelector('.tut-text').textContent = step.text;
+    o.querySelector('.tut-step').textContent = `Schritt ${i+1}/${steps.length}`;
+    o.querySelector('.tut-pct').textContent = Math.round(((i+1)/steps.length)*100) + '%';
+    o.querySelector('.tut-bar').style.width = ((i+1)/steps.length)*100 + '%';
+    o.querySelector('.tut-btn-back').style.display = i > 0 ? '' : 'none';
+    const nextBtn = o.querySelector('.tut-btn-next');
+    nextBtn.textContent = i === steps.length - 1 ? 'Fertig' : 'Weiter';
 }
 
 window.addEventListener('resize', () => {
     if(document.getElementById('tutorial-overlay') && window.__tutorialSteps){
         clearTimeout(window.__tutorialResizeTimer);
-        window.__tutorialResizeTimer = setTimeout(() => showTutorialStep(window.__tutorialIndex || 0, window.__tutorialSteps), 180);
+        window.__tutorialResizeTimer = setTimeout(() => applyTutorialStep(window.__tutorialIndex || 0, false), 150);
     }
 });
 function setManualDevice(device){ localStorage.setItem('mf_manual_device', device); document.documentElement.setAttribute('data-device', device); document.body.setAttribute('data-device', device); showToast('Ansicht: '+device); }
