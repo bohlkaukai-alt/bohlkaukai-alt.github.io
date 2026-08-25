@@ -21,31 +21,49 @@ function updateHeader(page) {
     if (typeof updateThemeToggleButtons === 'function') updateThemeToggleButtons(document.body?.getAttribute('data-theme') || getSavedTheme());
 }
 function navigateTo(page, data = null, addToHistory = true) {
+    const prevPage = currentPage;
     if (addToHistory && currentPage && currentPage !== page) {
         navigationHistory.push({ page: currentPage, data: currentPageData });
     }
     currentPage = page;
     currentPageData = data;
-    updateHeader(page);
-    syncActiveNav(page);
-    cleanupListeners();
 
-    if (!currentUser && page !== 'login') { showLoginScreen(); return; }
-    if (page === 'login') showLoginScreen();
-    else if (page === 'jobs') showJobsScreen();
-    else if (page === 'map') showMapScreen();
-    else if (page === 'create') showCreateJobScreen();
-    else if (page === 'chats') showChatsScreen();
-    else if (page === 'profile') showProfileScreen();
-    else if (page === 'settings') showSettingsScreen();
-    else if (page === 'job-detail') showJobDetailScreen(data);
-    else if (page === 'ratings') showRatingsScreen();
-    else if (page === 'my-jobs') showMyJobs();
-    else if (page === 'edit-profile') editProfileScreen();
-    else if (page === 'feedback') showFeedbackScreen();
-    else if (page === 'edit-job') showEditJobScreen(data);
-    else if (page === 'chat') showChatScreen(data);
-    else showJobsScreen();
+    const mc = document.querySelector('.main-content');
+    if(mc && prevPage !== page){
+        mc.classList.add('page-fade-out');
+    }
+
+    const show = () => {
+        updateHeader(page);
+        syncActiveNav(page);
+        cleanupListeners();
+        if (!currentUser && page !== 'login') { showLoginScreen(); return; }
+        if (page === 'login') showLoginScreen();
+        else if (page === 'jobs') showJobsScreen();
+        else if (page === 'map') showMapScreen();
+        else if (page === 'create') showCreateJobScreen();
+        else if (page === 'chats') showChatsScreen();
+        else if (page === 'profile') showProfileScreen();
+        else if (page === 'settings') showSettingsScreen();
+        else if (page === 'job-detail') showJobDetailScreen(data);
+        else if (page === 'ratings') showRatingsScreen();
+        else if (page === 'my-jobs') showMyJobs();
+        else if (page === 'edit-profile') editProfileScreen();
+        else if (page === 'feedback') showFeedbackScreen();
+        else if (page === 'edit-job') showEditJobScreen(data);
+        else if (page === 'chat') showChatScreen(data);
+        else showJobsScreen();
+        const mc2 = document.querySelector('.main-content');
+        if(mc2){
+            requestAnimationFrame(() => { mc2.classList.remove('page-fade-out'); });
+        }
+    };
+
+    if(mc && prevPage !== page){
+        setTimeout(show, 180);
+    } else {
+        show();
+    }
 }
 function goBack() {
     if (navigationHistory.length) {
