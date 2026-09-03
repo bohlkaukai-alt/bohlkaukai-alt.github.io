@@ -1848,3 +1848,16 @@ body[data-device="mobile"] #social-footer {
    
 }
  .legal-social-links { display: flex; flex-direction: column; gap: 8px; }
+
+.download-modal { max-width: 380px; }
+.download-options { display: flex; flex-direction: column; gap: 10px; }
+.download-option { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; cursor: pointer; text-decoration: none; color: var(--text); transition: background .2s ease, border-color .2s ease, transform .15s ease; }
+.download-option:hover { background: var(--card-hover); border-color: var(--primary-blue); transform: scale(1.02); }
+.download-option:active { transform: scale(0.98); }
+.download-icon { font-size: 28px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; background: var(--chip-bg); border-radius: 14px; flex-shrink: 0; }
+.download-info { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.download-info strong { font-size: 15px; }
+.download-arrow { color: var(--primary-blue); font-size: 22px; }
+.download-option-alt { border-style: dashed !important; }
+
+

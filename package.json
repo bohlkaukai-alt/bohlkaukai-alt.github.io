@@ -1,0 +1,49 @@
+{
+  "name": "minijob-finder",
+  "version": "1.0.0",
+  "description": "MiniJob Finder Desktop App",
+  "main": "electron/main.js",
+  "scripts": {
+    "start:electron": "electron .",
+    "build:win": "electron-builder --win"
+  },
+  "author": "MiniJob Finder Team",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "de.minijobfinder.app",
+    "productName": "MiniJob Finder",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/**/*",
+      "index.html",
+      "datenschutz.html",
+      "impressum.html",
+      "404.html",
+      "manifest.json",
+      "sw.js",
+      "assets/**/*",
+      "!node_modules/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "MiniJob Finder"
+    }
+  }
+}

@@ -5,6 +5,10 @@ node_modules/
 .DS_Store
 Thumbs.db
 
+# Build-Outputs
+release/
+package-lock.json
+
 # Alte PHP/STRATO-Dateien gehören nicht in die GitHub-Pages-Version
 includes/config.php
 includes/database.php

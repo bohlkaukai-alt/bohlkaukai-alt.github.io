@@ -80,7 +80,6 @@ function qSetLoading(html = '<div class="spinner"></div>') {
     if (main) main.innerHTML = html;
 }
 
-// Navigation wrapper: hide nav in private chat and avoid double click lag
 if (typeof navigateTo === 'function' && !navigateTo.__qualityWrapped) {
     const oldNavigateTo = navigateTo;
     navigateTo = function(page, data = null, addToHistory = true) {
@@ -96,7 +95,6 @@ if (typeof navigateTo === 'function' && !navigateTo.__qualityWrapped) {
     navigateTo.__qualityWrapped = true;
 }
 
-// Header wrapper: make footer/social links stay alive after render changes
 if (typeof updateHeader === 'function' && !updateHeader.__qualityWrapped) {
     const oldUpdateHeader = updateHeader;
     updateHeader = function(page) {
@@ -107,7 +105,6 @@ if (typeof updateHeader === 'function' && !updateHeader.__qualityWrapped) {
     updateHeader.__qualityWrapped = true;
 }
 
-// PWA Badge support
 async function updateAppBadge(count) {
     const n = Math.max(0, Number(count) || 0);
     try {
@@ -115,9 +112,7 @@ async function updateAppBadge(count) {
             if (n > 0) await navigator.setAppBadge(n);
             else await navigator.clearAppBadge();
         }
-    } catch (e) {
-        // Badging API is optional. Ignore unsupported platforms.
-    }
+    } catch (e) {}
 }
 function updateNavUnreadBadge(total) {
     document.querySelectorAll('[data-page="chats"]').forEach(btn => {
@@ -149,7 +144,6 @@ startUnreadBadgeListener = function() {
         }, () => updateNavUnreadBadge(0));
 };
 
-// WhatsApp-like chat overview with 3-dot menu
 showChatsScreen = function() {
     updateHeader('chats');
     qSetChatPageClass('chats');
@@ -209,7 +203,6 @@ async function qMarkChatRead(chatId) {
     } catch (e) {}
 }
 
-// Chat detail: hide bottom nav, scroll to first unread once, then mark read
 showChatScreen = async function(chatId) {
     updateHeader('chat');
     qSetChatPageClass('chat');
@@ -360,7 +353,6 @@ deleteChatForMe = async function(chatId) {
     navigateTo('chats');
 };
 
-// Feedback repair with validation, metadata and fallback
 showFeedbackScreen = function() {
     updateHeader('feedback');
     document.getElementById('main-content').innerHTML = `<div class="form-page feedback-page">
@@ -420,7 +412,6 @@ sendFeedback = async function() {
     }
 };
 
-// Faster profile: render immediately, then fill stats asynchronously
 showProfileScreen = function() {
     updateHeader('profile');
     const name = currentUser?.name || '';
@@ -461,7 +452,6 @@ showProfileScreen = function() {
     });
 };
 
-// Better settings with required links
 showSettingsScreen = function() {
     updateHeader('settings');
     document.getElementById('main-content').innerHTML = `<div class="settings-page">
@@ -483,12 +473,12 @@ showSettingsScreen = function() {
             <div class="settings-item" onclick="openCookieSettings()"><span>🍪 Cookies</span><span>Ändern</span></div>
             <div class="settings-item" onclick="window.open('datenschutz.html','_blank')"><span>🔐 Datenschutzerklärung</span><span>Öffnen</span></div>
             <div class="settings-item" onclick="window.open('impressum.html','_blank')"><span>ℹ️ Impressum</span><span>Öffnen</span></div>
+            <div class="settings-item" onclick="openDownloadModal()"><span>📥 App herunterladen</span><span>›</span></div>
             <div class="settings-item danger-link" onclick="deleteMyAccount()"><span>🗑️ Account löschen</span><span>Löschen</span></div>
         </div>
     </div>`;
 };
 
-// Re-apply social links after route rendering
 document.addEventListener('click', (e) => {
     if (!e.target.closest('.chat-context-menu') && !e.target.closest('.chat-menu-btn')) closeChatMenus();
 });
