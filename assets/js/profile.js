@@ -115,39 +115,30 @@ async function deleteMyAccount() {
 
 function openDownloadModal() {
     const releaseBase = 'https://github.com/bohlkaukai-alt/Minijobfinder/releases/latest/download';
-    const isAndroid = /android/i.test(navigator.userAgent);
-
-    let platformOptions = '';
-    if (isAndroid) {
-        platformOptions = `
-            <div class="download-option download-option-alt" onclick="installPwa(); this.closest('.modal-overlay').remove();">
-                <div class="download-icon">🤖</div>
-                <div class="download-info">
-                    <strong>Als App installieren</strong>
-                    <span class="small-muted">Zum Startbildschirm hinzufügen</span>
-                </div>
-                <span class="material-icons download-arrow">add_to_home_screen</span>
-            </div>`;
-    } else {
-        platformOptions = `
-            <a href="${releaseBase}/MiniJob.Finder.Setup.1.0.0.exe" class="download-option" download>
-                <div class="download-icon">🖥️</div>
-                <div class="download-info">
-                    <strong>Windows herunterladen</strong>
-                    <span class="small-muted">Installationsdatei (.exe)</span>
-                </div>
-                <span class="material-icons download-arrow">download</span>
-            </a>`;
-    }
 
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
     modal.innerHTML = `
         <div class="modal-content download-modal">
             <h2>📥 App herunterladen</h2>
-            <p class="small-muted" style="margin-bottom:16px">Wähle deine Option</p>
+            <p class="small-muted" style="margin-bottom:16px">Wähle deine Plattform</p>
             <div class="download-options">
-                ${platformOptions}
+                <a href="${releaseBase}/GitHub-unsigned.apk" class="download-option" download>
+                    <div class="download-icon">🤖</div>
+                    <div class="download-info">
+                        <strong>Android</strong>
+                        <span class="small-muted">APK-Datei herunterladen</span>
+                    </div>
+                    <span class="material-icons download-arrow">download</span>
+                </a>
+                <a href="${releaseBase}/MiniJob.Finder.Setup.1.0.0.exe" class="download-option" download>
+                    <div class="download-icon">🖥️</div>
+                    <div class="download-info">
+                        <strong>Windows</strong>
+                        <span class="small-muted">Installationsdatei (.exe)</span>
+                    </div>
+                    <span class="material-icons download-arrow">download</span>
+                </a>
             </div>
             <button class="btn btn-outline" style="width:100%;margin-top:12px" onclick="this.closest('.modal-overlay').remove()">Schließen</button>
         </div>`;
