@@ -497,11 +497,12 @@ async function toggleGuestAccess(enabled) {
     try {
         await db.collection('users').doc(currentUser.uid).set({ guestAccessEnabled: enabled }, { merge: true });
         currentUser.guestAccessEnabled = enabled;
+        db.clearPersistence().catch(() => {});
         showToast(enabled ? 'Gastzugang aktiviert' : 'Gastzugang deaktiviert');
     } catch (e) {
         showToast('Fehler: ' + e.message);
-        showSettingsScreen();
     }
+    showSettingsScreen();
 }
 
 document.addEventListener('click', (e) => {

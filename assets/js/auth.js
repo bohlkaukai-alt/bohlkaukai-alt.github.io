@@ -13,7 +13,8 @@ function getAuthErrorMessage(error) {
         'auth/weak-password': 'Das Passwort ist zu schwach. Nutze mindestens 6 Zeichen.',
         'auth/network-request-failed': 'Netzwerkfehler. Prüfe Internetverbindung, Domain und HTTPS.',
         'auth/unauthorized-domain': 'Diese Domain ist in Firebase Auth nicht freigegeben.',
-        'auth/operation-not-allowed': 'E-Mail/Passwort-Login ist in Firebase nicht aktiviert.'
+        'auth/operation-not-allowed': 'E-Mail/Passwort-Login ist in Firebase nicht aktiviert.',
+        'auth/admin-restricted-operation': 'Anonymes Login ist nicht aktiviert. Bitte in Firebase Console unter Authentication → Sign-in method → Anonymous aktivieren.'
     };
     return map[code] || message;
 }
@@ -65,7 +66,7 @@ async function checkGuestAccess() {
     const section = document.getElementById('guest-login-section');
     if (!section) return;
     try {
-        const snap = await db.collection('users').where('guestAccessEnabled', '==', true).limit(1).get();
+        const snap = await db.collection('users').where('guestAccessEnabled', '==', true).limit(1).get({ source: 'server' });
         if (!snap.empty) {
             section.innerHTML = `
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
@@ -76,8 +77,12 @@ async function checkGuestAccess() {
                 <button class="btn btn-outline" onclick="loginAsGuest()" style="width:100%">
                     👤 Als Gast fortfahren
                 </button>`;
+        } else {
+            section.innerHTML = '';
         }
-    } catch (e) {}
+    } catch (e) {
+        section.innerHTML = '';
+    }
 }
 
 async function loginAsGuest() {
