@@ -583,6 +583,7 @@ select.form-input,
     display: flex;
     flex-direction: column;
     justify-content: center;
+    align-items: center;
     padding: 22px;
 }
 
@@ -592,6 +593,7 @@ select.form-input,
     border-radius: 30px;
     padding: 24px;
     box-shadow: var(--shadow-soft);
+    margin: 0 auto;
 }
 
 .login-logo {
