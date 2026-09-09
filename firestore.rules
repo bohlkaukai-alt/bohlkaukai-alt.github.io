@@ -1,0 +1,72 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // users: Jeder kann lesen, jeder nur sich selbst schreiben
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // jobs: Jeder (auch gaeste) lesen, nur authentifizierte nicht-anonyme Nutzer schreiben
+    match /jobs/{jobId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.auth.token.firebase.sign_in_provider != 'anonymous';
+      allow update, delete: if request.auth != null
+        && request.auth.token.firebase.sign_in_provider != 'anonymous'
+        && (resource.data.createdBy == request.auth.uid
+            || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true);
+    }
+
+    // chats: Nur authentifizierte nicht-anonyme Nutzer
+    match /chats/{chatId} {
+      allow read: if request.auth != null
+        && request.auth.token.firebase.sign_in_provider != 'anonymous'
+        && request.auth.uid in resource.data.participants;
+      allow create: if request.auth != null
+        && request.auth.token.firebase.sign_in_provider != 'anonymous';
+      allow update: if request.auth != null
+        && request.auth.token.firebase.sign_in_provider != 'anonymous'
+        && request.auth.uid in resource.data.participants;
+
+      // messages Subcollection
+      match /messages/{messageId} {
+        allow read: if request.auth != null
+          && request.auth.token.firebase.sign_in_provider != 'anonymous'
+          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+        allow create: if request.auth != null
+          && request.auth.token.firebase.sign_in_provider != 'anonymous'
+          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+      }
+    }
+
+    // ratings: Jeder lesen, nur authentifizierte nicht-anonyme schreiben
+    match /ratings/{ratingId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.auth.token.firebase.sign_in_provider != 'anonymous';
+      allow update, delete: if request.auth != null
+        && request.auth.token.firebase.sign_in_provider != 'anonymous'
+        && resource.data.fromUserId == request.auth.uid;
+    }
+
+    // feedback: Nur authentifizierte nicht-anonyme Nutzer
+    match /feedback/{feedbackId} {
+      allow read: if request.auth != null
+        && request.auth.token.firebase.sign_in_provider != 'anonymous';
+      allow create: if request.auth != null
+        && request.auth.token.firebase.sign_in_provider != 'anonymous';
+    }
+
+    // reports: Nur authentifizierte nicht-anonyme Nutzer
+    match /reports/{reportId} {
+      allow read: if request.auth != null
+        && request.auth.token.firebase.sign_in_provider != 'anonymous';
+      allow create: if request.auth != null
+        && request.auth.token.firebase.sign_in_provider != 'anonymous';
+      allow delete: if request.auth != null
+        && request.auth.token.firebase.sign_in_provider != 'anonymous';
+    }
+  }
+}

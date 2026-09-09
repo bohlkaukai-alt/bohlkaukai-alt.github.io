@@ -145,6 +145,7 @@ startUnreadBadgeListener = function() {
 };
 
 showChatsScreen = function() {
+    if (!requireAuth('Chats zu nutzen')) return;
     updateHeader('chats');
     qSetChatPageClass('chats');
     qSetLoading('<div class="chat-list-skeleton">' + skeletonCards(5) + '</div>');
@@ -272,6 +273,7 @@ showChatScreen = async function(chatId) {
 };
 
 sendChatMessage = async function(chatId) {
+    if (!requireAuth('Nachrichten zu senden')) return;
     const input = document.getElementById('chat-input');
     const text = input?.value.trim();
     if (!text) return;
@@ -371,6 +373,7 @@ showFeedbackScreen = function() {
 };
 
 sendFeedback = async function() {
+    if (!requireAuth('Feedback zu senden')) return;
     const text = document.getElementById('feedback-text')?.value.trim();
     const type = document.getElementById('feedback-type')?.value || 'Sonstiges';
     const btn = document.getElementById('feedback-send-btn');
@@ -417,6 +420,7 @@ showProfileScreen = function() {
     const name = currentUser?.name || '';
     const city = currentUser?.city || localStorage.getItem('mf_city') || '';
     document.getElementById('main-content').innerHTML = `<div class="profile-page">
+        ${isGuest() ? '<div class="card" style="background:var(--accent-orange);color:#fff;cursor:auto;margin-bottom:8px"><strong>👤 Gastmodus</strong><p class="small-muted" style="color:rgba(255,255,255,0.85)">Du browsed als Gast. Registriere dich für vollen Zugriff.</p></div>' : ''}
         <div class="card profile-head" style="cursor:auto">
             <div class="profile-avatar" style="background:${escapeHtml(currentUser?.profileColor || 'linear-gradient(135deg, var(--primary-blue), var(--accent-orange))')}">${escapeHtml((name || '?').charAt(0).toUpperCase())}</div>
             <h2>${escapeHtml(name)}</h2>
@@ -429,11 +433,11 @@ showProfileScreen = function() {
             <div class="card"><strong id="profile-rating">⭐ …</strong><span>Bewertung</span></div>
             <div class="card"><strong id="profile-rating-count">…</strong><span>Anzahl</span></div>
         </div>
-        <div class="card" onclick="navigateTo('my-jobs')"><strong>Meine Jobs</strong><p class="small-muted">Eigene Anzeigen verwalten</p></div>
+        ${isGuest() ? '' : '<div class="card" onclick="navigateTo(\'my-jobs\')"><strong>Meine Jobs</strong><p class="small-muted">Eigene Anzeigen verwalten</p></div>'}
         <div class="card" onclick="navigateTo('ratings')"><strong>Bewertungen</strong><p class="small-muted">Bewertungen ansehen</p></div>
-        <div class="card" onclick="navigateTo('edit-profile')"><strong>Profil bearbeiten</strong></div>
+        ${isGuest() ? '' : '<div class="card" onclick="navigateTo(\'edit-profile\')"><strong>Profil bearbeiten</strong></div>'}
         <div class="card" onclick="navigateTo('settings')"><strong>Einstellungen</strong><p class="small-muted">Datenschutz, Cookies, Design, Feedback</p></div>
-        <button class="btn btn-danger" onclick="logout()">Abmelden</button>
+        <button class="btn btn-danger" onclick="logout()">${isGuest() ? 'Gast-Session beenden' : 'Abmelden'}</button>
     </div>`;
 
     Promise.all([
@@ -454,14 +458,23 @@ showProfileScreen = function() {
 
 showSettingsScreen = function() {
     updateHeader('settings');
+    const guestEnabled = currentUser?.guestAccessEnabled === true;
     document.getElementById('main-content').innerHTML = `<div class="settings-page">
         <h2>Einstellungen</h2>
+        ${isGuest() ? '<div class="card" style="background:var(--accent-orange);color:#fff;cursor:auto;margin-bottom:8px"><strong>👤 Gastmodus</strong><p class="small-muted" style="color:rgba(255,255,255,0.85)">Du bist als Gast angemeldet. Manche Funktionen sind eingeschränkt.</p><button class="btn btn-outline" style="margin-top:8px;border-color:rgba(255,255,255,0.5);color:#fff" onclick="logout()">Abmelden</button></div>' : ''}
         <div class="card" style="cursor:auto">
             ${isAdminAccount() ? `
             <div class="settings-item">
                 <span>🛠️ Admin-Modus</span>
                 <label class="switch">
                     <input type="checkbox" ${localStorage.getItem('mf_admin_mode') === 'on' ? 'checked' : ''} onchange="localStorage.setItem('mf_admin_mode', this.checked?'on':'off'); showToast(this.checked?'Admin-Modus aktiviert':'Admin-Modus deaktiviert')">
+                    <i></i>
+                </label>
+            </div>
+            <div class="settings-item">
+                <span>👤 Gastzugang erlauben</span>
+                <label class="switch">
+                    <input type="checkbox" ${guestEnabled ? 'checked' : ''} onchange="toggleGuestAccess(this.checked)">
                     <i></i>
                 </label>
             </div>
@@ -474,10 +487,22 @@ showSettingsScreen = function() {
             <div class="settings-item" onclick="window.open('datenschutz.html','_blank')"><span>🔐 Datenschutzerklärung</span><span>Öffnen</span></div>
             <div class="settings-item" onclick="window.open('impressum.html','_blank')"><span>ℹ️ Impressum</span><span>Öffnen</span></div>
             <div class="settings-item" onclick="openDownloadModal()"><span>📥 App herunterladen</span><span>›</span></div>
-            <div class="settings-item danger-link" onclick="deleteMyAccount()"><span>🗑️ Account löschen</span><span>Löschen</span></div>
+            ${!isGuest() ? '<div class="settings-item danger-link" onclick="deleteMyAccount()"><span>🗑️ Account löschen</span><span>Löschen</span></div>' : ''}
         </div>
     </div>`;
 };
+
+async function toggleGuestAccess(enabled) {
+    if (!isAdminAccount()) return;
+    try {
+        await db.collection('users').doc(currentUser.uid).set({ guestAccessEnabled: enabled }, { merge: true });
+        currentUser.guestAccessEnabled = enabled;
+        showToast(enabled ? 'Gastzugang aktiviert' : 'Gastzugang deaktiviert');
+    } catch (e) {
+        showToast('Fehler: ' + e.message);
+        showSettingsScreen();
+    }
+}
 
 document.addEventListener('click', (e) => {
     if (!e.target.closest('.chat-context-menu') && !e.target.closest('.chat-menu-btn')) closeChatMenus();

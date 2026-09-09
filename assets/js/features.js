@@ -114,6 +114,12 @@ afterSuccessfulAuth = function() {
     oldAfterSuccessfulAuth();
     startUnreadBadgeListener();
     setTimeout(() => maybeStartTutorial(), 800);
+    if (isGuest()) {
+        const createBtn = document.querySelector('[data-page="create"]');
+        const chatBtn = document.querySelector('[data-page="chats"]');
+        if (createBtn) createBtn.style.display = 'none';
+        if (chatBtn) chatBtn.style.display = 'none';
+    }
 };
 
 // ---------- JOBS ----------
@@ -185,6 +191,7 @@ renderJobCard = function(id, j) {
     </div>`;
 };
 showCreateJobScreen = function() {
+    if (!requireAuth('Jobs zu erstellen')) return;
     updateHeader('create');
     const cats = getAllCategories().filter(c => c !== 'Alle');
     document.getElementById('main-content').innerHTML = `<div class="form-page"><h2>Job erstellen</h2>
@@ -199,6 +206,7 @@ showCreateJobScreen = function() {
 };
 const oldCreateJob = createJob;
 createJob = async function() {
+    if (!requireAuth('Jobs zu erstellen')) return;
     const ttl = document.getElementById('job-title')?.value.trim();
     let cat = document.getElementById('job-category')?.value;
     const customCat = document.getElementById('custom-category')?.value.trim();
@@ -229,7 +237,7 @@ showJobDetailScreen = async function(jobId) {
         <p class="detail-desc">${escapeHtml(job.description)}</p>
         <div class="detail-grid"><p>📍 ${escapeHtml(job.location)} · ${dist} km</p><p>💰 ${formatPayment(job.payment)}</p><p>Von: ${escapeHtml(job.creatorName || 'Unbekannt')}</p><p>👁 ${job.views || 0} Aufrufe</p></div>
     </div>
-    ${!isOwner ? `<button class="btn btn-accent" onclick="startChatForJob('${jobId}', true)">Jetzt bewerben</button><button class="btn btn-outline" onclick="startChatForJob('${jobId}')">Nachricht senden</button>` : ''}
+    ${!isOwner && !isGuest() ? `<button class="btn btn-accent" onclick="startChatForJob('${jobId}', true)">Jetzt bewerben</button><button class="btn btn-outline" onclick="startChatForJob('${jobId}')">Nachricht senden</button>` : ''}
     <button class="btn btn-outline" onclick="showMapForJob('${jobId}')">Auf Karte anzeigen</button>
     ${canManage ? `<button class="btn btn-primary" onclick="navigateTo('edit-job','${jobId}')">Bearbeiten</button><button class="btn btn-outline" onclick="toggleJobStatus('${jobId}', '${job.status === 'reserviert' ? 'offen' : 'reserviert'}')">${job.status === 'reserviert' ? 'Wieder öffnen' : 'Reservieren'}</button><button class="btn btn-outline" onclick="showCompleteJobModal('${jobId}')">Als erledigt markieren</button><button class="btn btn-danger" onclick="deleteJob('${jobId}')">Löschen</button>` : ''}</div>`;
 };
@@ -433,6 +441,7 @@ showChatsScreen = function() {
     }, err => { document.getElementById('main-content').innerHTML = `<div class="empty-state">Chat-Fehler: ${escapeHtml(err.message)}</div>`; });
 };
 startChatForJob = async function(jobId, applyMessage = false) {
+    if (!requireAuth('Nachrichten zu senden')) return;
     const jobDoc = await db.collection('jobs').doc(jobId).get(); const job = jobDoc.data(); if (!job) { showToast('Job nicht gefunden'); return; } if (job.createdBy === currentUser.uid) { showToast('Das ist dein eigener Job'); return; }
     const participants = [currentUser.uid, job.createdBy].sort(); const key = participants.join('_');
     const existing = await db.collection('chats').where('jobId','==',jobId).where('participantsKey','==',key).limit(1).get(); let chatId;
@@ -460,6 +469,7 @@ showProfileScreen = async function() {
     document.getElementById('main-content').innerHTML = `<div class="profile-page"><div class="card profile-head" style="cursor:auto"><div class="profile-avatar" style="background:${escapeHtml(color)}">${escapeHtml((currentUser?.name || '?').charAt(0).toUpperCase())}</div><h2>${escapeHtml(currentUser?.name || '')}</h2><p class="small-muted">${escapeHtml(currentUser?.city || localStorage.getItem('mf_city') || '')}</p><p>${escapeHtml(currentUser?.bio || '')}</p>${isAdmin()?'<span class="admin-badge">Admin</span>':''}</div><div class="stats-grid"><div class="card"><strong>${activeJobs}</strong><span>Aktive Jobs</span></div><div class="card"><strong>⭐ ${avg}</strong><span>Bewertung</span></div><div class="card"><strong>${ratings.length}</strong><span>Anzahl</span></div></div><div class="card" onclick="navigateTo('my-jobs')"><strong>Meine Jobs</strong><p class="small-muted">Eigene Anzeigen verwalten</p></div><div class="card" onclick="navigateTo('ratings')"><strong>Bewertungen</strong><p class="small-muted">Bewertungen ansehen</p></div><div class="card" onclick="navigateTo('edit-profile')"><strong>Profil bearbeiten</strong></div><div class="card" onclick="navigateTo('settings')"><strong>Einstellungen</strong><p class="small-muted">Dark Mode, Sounds, Kategorien, Wohnort</p></div><button class="btn btn-danger" onclick="logout()">Abmelden</button></div>`;
 };
 editProfileScreen = function() {
+    if (!requireAuth('Profil zu bearbeiten')) return;
     updateHeader('edit-profile');
     const colors = ['#2563EB','#EF4444','#F97316','#22C55E','#7C3AED','#EC4899','#0EA5E9','#14B8A6','#64748B','#111827'];
     const currentColor = currentUser.profileColor || '#2563EB';
@@ -559,7 +569,7 @@ function updateProfileGradient() {
     document.getElementById('profile-color').value = gradient;
     document.getElementById('live-avatar').style.background = gradient;
 }
-saveProfile = async function() { const payload={ name:document.getElementById('profile-name').value.trim(), city:document.getElementById('profile-city').value.trim(), bio:document.getElementById('profile-bio').value.trim(), profileColor:document.getElementById('profile-color').value }; if(!payload.name){showToast('Name eingeben');return;} await db.collection('users').doc(currentUser.uid).set(payload,{merge:true}); Object.assign(currentUser,payload); localStorage.setItem('mf_city', payload.city); showToast('Profil gespeichert'); navigateTo('profile'); };
+saveProfile = async function() { if (!requireAuth('Profil zu speichern')) return; const payload={ name:document.getElementById('profile-name').value.trim(), city:document.getElementById('profile-city').value.trim(), bio:document.getElementById('profile-bio').value.trim(), profileColor:document.getElementById('profile-color').value }; if(!payload.name){showToast('Name eingeben');return;} await db.collection('users').doc(currentUser.uid).set(payload,{merge:true}); Object.assign(currentUser,payload); localStorage.setItem('mf_city', payload.city); showToast('Profil gespeichert'); navigateTo('profile'); };
 
 showSettingsScreen = function() {
     updateHeader('settings');
@@ -638,7 +648,7 @@ showSettingsScreen = function() {
 };
 function addCustomCategory(){ const v=document.getElementById('new-category').value.trim(); if(!v)return; const list=getCustomCategories(); if(!list.includes(v)) list.push(v); saveCustomCategories(list); showSettingsScreen(); }
 function removeCustomCategory(c){ if(!confirm('Kategorie löschen?'))return; saveCustomCategories(getCustomCategories().filter(x=>x!==c)); showSettingsScreen(); }
-async function deleteProfile(){ if(!confirm('Profil wirklich löschen?'))return; if(!confirm('Letzte Bestätigung: Konto und Profildaten löschen?'))return; await db.collection('users').doc(currentUser.uid).delete().catch(()=>{}); await auth.currentUser.delete().catch(()=>showToast('Bitte neu anmelden und nochmal löschen.')); }
+async function deleteProfile(){ if (!requireAuth('Profil zu löschen')) return; if(!confirm('Profil wirklich löschen?'))return; if(!confirm('Letzte Bestätigung: Konto und Profildaten löschen?'))return; await db.collection('users').doc(currentUser.uid).delete().catch(()=>{}); await auth.currentUser.delete().catch(()=>showToast('Bitte neu anmelden und nochmal löschen.')); }
 async function showAdminScreen(){ updateHeader('admin'); const reports=await db.collection('reports').get().catch(()=>null); document.getElementById('main-content').innerHTML=`<div class="settings-page"><h2>Admin-Modus</h2><p class="small-muted">Vorbereitet für Admin-Funktionen.</p>${reports?reports.docs.map(d=>`<div class="card"><strong>Meldung</strong><p>${escapeHtml(d.data().reason)}</p><button class="btn btn-danger" onclick="db.collection('reports').doc('${d.id}').delete().then(()=>showAdminScreen())">Löschen</button></div>`).join(''):'<div class="empty-state">Keine Meldungen geladen</div>'}</div>`; }
 showFeedbackScreen = function() { updateHeader('feedback'); document.getElementById('main-content').innerHTML = `<div class="form-page"><h2>Feedback</h2><select id="feedback-priority" class="form-input"><option>Niedrig</option><option>Mittel</option><option>Hoch</option></select><textarea id="feedback-text" class="form-textarea" placeholder="Was funktioniert nicht oder was soll verbessert werden?"></textarea><button class="btn btn-accent" onclick="sendFeedback()">Senden</button></div>`; };
 sendFeedback = async function(){ const text=document.getElementById('feedback-text').value.trim(); if(!text){showToast('Text eingeben');return;} await db.collection('feedback').add({ text, priority:document.getElementById('feedback-priority').value, userId:currentUser.uid, email:currentUser.email, createdAt:firebase.firestore.FieldValue.serverTimestamp() }); showToast('Feedback gesendet'); navigateTo('profile'); };

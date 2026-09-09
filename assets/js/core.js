@@ -36,6 +36,15 @@ function getCurrencySymbol() { return currencySymbols[currentCurrency] || '€';
 function formatPayment(amount) { return `${amount} ${getCurrencySymbol()}`; }
 function isAdminAccount() { return currentUser && adminEmails.includes(currentUser.email); }
 function isAdmin() { return isAdminAccount() && localStorage.getItem('mf_admin_mode') === 'on'; }
+function isGuest() { return currentUser?.isAnonymous === true || currentUser?.firebase?.sign_in_provider === 'anonymous'; }
+function requireAuth(action) {
+    if (isGuest()) {
+        showToast('Bitte melde dich an, um ' + (action || 'diese Funktion') + ' zu nutzen.');
+        navigateTo('login');
+        return false;
+    }
+    return true;
+}
 function saveViewedJobs() {
     const key = currentUser ? `mf_viewed_${currentUser.uid}` : 'mf_viewed_guest';
     localStorage.setItem(key, JSON.stringify(viewedJobs));

@@ -53,10 +53,45 @@ function showLoginScreen() {
                 <input id="login-password" type="password" class="form-input" placeholder="Passwort" autocomplete="current-password" onkeydown="if(event.key==='Enter') login()">
                 <button id="login-button" class="btn btn-accent" onclick="login()">Anmelden</button>
                 <button class="btn btn-outline" onclick="showRegister()" style="margin-top:8px">Registrieren</button>
+                <div id="guest-login-section" style="margin-top:12px"></div>
                 <p class="login-help">Falls der Login auf einem eigenen Server nicht funktioniert: Domain in Firebase Authentication → Settings → Authorized domains eintragen.</p>
             </div>
         </div>`;
     if (typeof updateThemeToggleButtons === 'function') updateThemeToggleButtons(document.body?.getAttribute('data-theme') || getSavedTheme());
+    checkGuestAccess();
+}
+
+async function checkGuestAccess() {
+    const section = document.getElementById('guest-login-section');
+    if (!section) return;
+    try {
+        const snap = await db.collection('users').where('guestAccessEnabled', '==', true).limit(1).get();
+        if (!snap.empty) {
+            section.innerHTML = `
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                    <div style="flex:1;height:1px;background:var(--border)"></div>
+                    <span class="small-muted" style="white-space:nowrap">oder</span>
+                    <div style="flex:1;height:1px;background:var(--border)"></div>
+                </div>
+                <button class="btn btn-outline" onclick="loginAsGuest()" style="width:100%">
+                    👤 Als Gast fortfahren
+                </button>`;
+        }
+    } catch (e) {}
+}
+
+async function loginAsGuest() {
+    const btn = document.querySelector('#guest-login-section .btn');
+    try {
+        if (btn) { btn.disabled = true; btn.textContent = 'Wird angemeldet...'; }
+        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+        await auth.signInAnonymously();
+        showToast('Als Gast angemeldet');
+    } catch (err) {
+        showInlineAuthError(getAuthErrorMessage(err));
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '👤 Als Gast fortfahren'; }
+    }
 }
 
 function showRegister() {
@@ -170,13 +205,16 @@ function bindAuthListener() {
     auth.onAuthStateChanged(async (user) => {
         try {
             if (user) {
-                currentUser = await ensureUserProfile(user);
+                if (user.isAnonymous) {
+                    currentUser = { uid: user.uid, isAnonymous: true, name: 'Gast', email: null };
+                } else {
+                    currentUser = await ensureUserProfile(user);
+                }
                 afterSuccessfulAuth();
             } else {
                 currentUser = null;
                 viewedJobs = JSON.parse(localStorage.getItem('mf_viewed_guest') || '[]');
                 document.getElementById('bottom-nav')?.classList.add('hidden');
-                // Login sofort zeigen, Standortabfrage nicht davor setzen.
                 navigateTo('login');
                 getPreciseLocation();
             }
