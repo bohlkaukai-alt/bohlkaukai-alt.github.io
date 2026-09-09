@@ -299,7 +299,6 @@ sendChatMessage = async function(chatId) {
     others.forEach(uid => upd[`unreadCounts.${uid}`] = firebase.firestore.FieldValue.increment(1));
     upd[`unreadCounts.${currentUser.uid}`] = 0;
     await chatRef.set(upd, { merge: true });
-    if (typeof playAppSound === 'function') playAppSound('send');
 };
 
 togglePinnedChat = async function(chatId) {

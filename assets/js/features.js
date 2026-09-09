@@ -29,27 +29,6 @@ function getStatusClass(status) {
 }
 function getSetting(key, fallback) { return localStorage.getItem(key) ?? fallback; }
 function setSetting(key, value) { localStorage.setItem(key, String(value)); }
-function soundsEnabled() { return localStorage.getItem('mf_sounds') !== 'off'; }
-function notificationsEnabled() { return localStorage.getItem('mf_notifications') !== 'off'; }
-function playAppSound(type) {
-    if (!soundsEnabled()) return;
-    try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const gain = ctx.createGain();
-        gain.connect(ctx.destination);
-        gain.gain.value = 0.18;
-        const seq = type === 'message' ? [[1200,0],[1600,.12]] : type === 'send' ? [[1000,0],[600,.12]] : type === 'success' ? [[600,0],[800,.1],[1000,.2]] : [[800,0]];
-        seq.forEach(([freq, offset]) => {
-            const osc = ctx.createOscillator();
-            osc.connect(gain); osc.type = 'sine'; osc.frequency.setValueAtTime(freq, ctx.currentTime + offset);
-            osc.start(ctx.currentTime + offset); osc.stop(ctx.currentTime + offset + .12);
-        });
-        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + .45);
-    } catch(e) {}
-}
-const oldShowToast = typeof showToast === 'function' ? showToast : null;
-showToast = function(msg) { if (oldShowToast) oldShowToast(msg); playAppSound('toast'); };
-
 function skeletonCards(count = 4) {
     return Array.from({length: count}).map(() => `<div class="card skeleton-card"><div></div><div></div><div></div></div>`).join('');
 }
@@ -105,7 +84,7 @@ register = async function() {
         const r = await auth.createUserWithEmailAndPassword(e, p);
         await ensureUserProfile(r.user, { name: n, email: e, age, city, bio: '', profileColor: '#2563EB' });
         localStorage.setItem('mf_city', city);
-        showToast('Registriert'); playAppSound('success');
+        showToast('Registriert');
     } catch(err) { showInlineAuthError(getAuthErrorMessage(err)); }
     finally { if (btn) { btn.disabled = false; btn.textContent = 'Registrieren'; } }
 };
@@ -217,7 +196,7 @@ createJob = async function() {
     if (!ttl || !cat || !desc || !loc || !pay) { showToast('Alle Felder ausfüllen'); return; }
     const coords = await getRandomPointInCity(loc);
     await db.collection('jobs').add({ title:ttl, category:cat, description:desc, location:loc, payment:pay, lat:coords.lat, lng:coords.lng, createdBy:currentUser.uid, creatorName:currentUser.name, createdAt:firebase.firestore.FieldValue.serverTimestamp(), updatedAt:firebase.firestore.FieldValue.serverTimestamp(), status:'offen', views:0, viewedBy:{}, ratings:{}, archived:false, jobType:selectedJobType });
-    showToast('Job erstellt'); playAppSound('success'); navigateTo('jobs');
+    showToast('Job erstellt'); navigateTo('jobs');
 };
 showJobDetailScreen = async function(jobId) {
     updateHeader('job-detail');
@@ -251,7 +230,7 @@ async function completeJob(jobId) {
     const doc = await db.collection('jobs').doc(jobId).get(); const job = doc.data();
     await db.collection('jobs').doc(jobId).update({ status:'erledigt', updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
     await db.collection('ratings').add({ jobId, jobTitle: job?.title || '', ratedUserId: job?.createdBy || '', fromUserId: currentUser.uid, stars: window.currentRatingValue || 5, text: document.getElementById('rating-text')?.value.trim() || '', createdAt: firebase.firestore.FieldValue.serverTimestamp() }).catch(()=>{});
-    document.getElementById('rating-modal')?.remove(); showToast('Job abgeschlossen'); playAppSound('success'); navigateTo('job-detail', jobId);
+    document.getElementById('rating-modal')?.remove(); showToast('Job abgeschlossen'); navigateTo('job-detail', jobId);
 }
 function showMapForJob(jobId) { navigateTo('map', { focusJobId: jobId }); }
 showMyJobs = async function() {
@@ -453,7 +432,7 @@ showChatScreen = async function(chatId) {
     document.getElementById('main-content').innerHTML = `<div class="chat-shell"><div class="chat-options"><button class="icon-pill" onclick="togglePinnedChat('${chatId}')">📌 Anpinnen</button><button class="icon-pill" onclick="markChatUnread('${chatId}')">📩 Ungelesen</button><button class="icon-pill" onclick="reportChat('${chatId}')">🚩 Melden</button><button class="icon-pill danger" onclick="deleteChatForMe('${chatId}')">🗑️ Löschen</button></div><div id="chat-messages" class="chat-messages"><div class="spinner"></div></div><div class="chat-input-bar"><input id="chat-input" class="form-input" style="margin:0" placeholder="Nachricht schreiben..." onkeydown="if(event.key==='Enter') sendChatMessage('${chatId}')"><button class="icon-circle" onclick="sendChatMessage('${chatId}')"><span class="material-icons">send</span></button></div></div>`;
     if (messagesUnsubscribe) messagesUnsubscribe(); messagesUnsubscribe = db.collection('chats').doc(chatId).collection('messages').orderBy('createdAt','asc').onSnapshot(snap => { const box=document.getElementById('chat-messages'); if(!box)return; if(snap.empty){ box.innerHTML='<div class="empty-state">Schreibe die erste Nachricht</div>'; return; } let inserted = false; box.innerHTML = snap.docs.map(d => { const m=d.data(); const sent=m.senderId===currentUser.uid; const sep = !sent && !inserted ? (inserted=true, '<div class="new-message-sep">Neue Nachrichten</div>') : ''; return `${sep}<div class="msg-wrapper ${sent?'sent':'received'}"><div class="msg-bubble ${sent?'sent':'received'}">${escapeHtml(m.text)}</div><div class="msg-time">${formatRelative(m.createdAt)}</div></div>`; }).join(''); box.scrollTop=box.scrollHeight; });
 };
-sendChatMessage = async function(chatId) { const input=document.getElementById('chat-input'); const text=input?.value.trim(); if(!text)return; input.value=''; const chatDoc=await db.collection('chats').doc(chatId).get(); const chat=chatDoc.data(); const others=(chat.participants||[]).filter(id=>id!==currentUser.uid); await db.collection('chats').doc(chatId).collection('messages').add({ text, senderId:currentUser.uid, senderName:currentUser.name||currentUser.email, createdAt:firebase.firestore.FieldValue.serverTimestamp() }); const upd={ lastMessage:text, updatedAt:firebase.firestore.FieldValue.serverTimestamp() }; others.forEach(uid => upd[`unreadCounts.${uid}`]=firebase.firestore.FieldValue.increment(1)); await db.collection('chats').doc(chatId).update(upd); playAppSound('send'); };
+sendChatMessage = async function(chatId) { const input=document.getElementById('chat-input'); const text=input?.value.trim(); if(!text)return; input.value=''; const chatDoc=await db.collection('chats').doc(chatId).get(); const chat=chatDoc.data(); const others=(chat.participants||[]).filter(id=>id!==currentUser.uid); await db.collection('chats').doc(chatId).collection('messages').add({ text, senderId:currentUser.uid, senderName:currentUser.name||currentUser.email, createdAt:firebase.firestore.FieldValue.serverTimestamp() }); const upd={ lastMessage:text, updatedAt:firebase.firestore.FieldValue.serverTimestamp() }; others.forEach(uid => upd[`unreadCounts.${uid}`]=firebase.firestore.FieldValue.increment(1)); await db.collection('chats').doc(chatId).update(upd); };
 async function togglePinnedChat(chatId) { await db.collection('chats').doc(chatId).set({ pinnedBy:{ [currentUser.uid]: true } }, { merge:true }); showToast('Chat angepinnt'); }
 async function markChatUnread(chatId) { await db.collection('chats').doc(chatId).update({ [`unreadCounts.${currentUser.uid}`]: firebase.firestore.FieldValue.increment(1) }); showToast('Als ungelesen markiert'); }
 async function reportChat(chatId) { const reason = prompt('Warum möchtest du den Chat melden?'); if (!reason) return; await db.collection('reports').add({ chatId, reason, reporterId: currentUser.uid, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); showToast('Meldung gesendet'); }
@@ -623,22 +602,6 @@ showSettingsScreen = function() {
                         <button onclick="removeCustomCategory('${escapeJs(c)}')">Löschen</button>
                     </div>
                 `).join('')}
-            </div>
-
-            <div class="settings-item">
-                <span>Sounds</span>
-                <label class="switch">
-                    <input type="checkbox" ${soundsEnabled() ? 'checked' : ''} onchange="localStorage.setItem('mf_sounds', this.checked?'on':'off')">
-                    <i></i>
-                </label>
-            </div>
-
-            <div class="settings-item">
-                <span>Benachrichtigungen</span>
-                <label class="switch">
-                    <input type="checkbox" ${notificationsEnabled() ? 'checked' : ''} onchange="localStorage.setItem('mf_notifications', this.checked?'on':'off')">
-                    <i></i>
-                </label>
             </div>
 
             <button class="btn btn-outline" onclick="installPwa()">App installieren</button>
