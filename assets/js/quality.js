@@ -144,11 +144,79 @@ startUnreadBadgeListener = function() {
         }, () => updateNavUnreadBadge(0));
 };
 
+function switchAdminTab(tab) {
+    document.querySelectorAll('.admin-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+    if (tab === 'feedback') showAdminFeedbackList();
+    else showChatsScreen();
+}
+
+async function showAdminFeedbackList() {
+    const main = document.getElementById('main-content');
+    const tabsHtml = isAdminAccount() ? `<div class="admin-tabs"><button class="admin-tab" data-tab="chats" onclick="switchAdminTab('chats')">💬 Chats</button><button class="admin-tab active" data-tab="feedback" onclick="switchAdminTab('feedback')">📋 Feedback</button></div>` : '';
+    main.innerHTML = tabsHtml + '<div class="spinner"></div>';
+    try {
+        const snap = await db.collection('feedback').orderBy('createdAt', 'desc').get();
+        if (snap.empty) {
+            main.innerHTML = tabsHtml + '<div class="empty-state">Noch kein Feedback</div>';
+            return;
+        }
+        const rows = snap.docs.map(d => {
+            const f = d.data();
+            const date = f.createdAt?.toDate ? f.createdAt.toDate() : new Date(f.createdAt || 0);
+            const dateStr = date.toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
+            const typeColors = { 'Fehler': '#EF4444', 'Verbesserung': '#22C55E', 'Sonstiges': '#64748B' };
+            const typeColor = typeColors[f.type] || '#64748B';
+            const statusClass = f.status === 'erledigt' ? 'status-done' : 'status-offen';
+            const statusLabel = f.status === 'erledigt' ? '✓ Erledigt' : '● Offen';
+            return `<div class="card feedback-admin-card" style="cursor:auto">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px">
+                    <div>
+                        <strong>${escapeHtml(f.name || 'Anonym')}</strong>
+                        <p class="small-muted">${escapeHtml(f.email || '')}</p>
+                    </div>
+                    <span class="status-badge ${statusClass}" style="font-size:11px">${statusLabel}</span>
+                </div>
+                <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+                    <span style="background:${typeColor};color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">${escapeHtml(f.type || 'Sonstiges')}</span>
+                    <span class="small-muted">${dateStr}</span>
+                </div>
+                <p style="margin:0 0 10px;line-height:1.4">${escapeHtml(f.text || '')}</p>
+                <div style="display:flex;gap:6px">
+                    ${f.status !== 'erledigt' ? `<button class="btn btn-accent" style="flex:1;padding:8px;font-size:12px" onclick="markFeedbackDone('${d.id}')">✓ Erledigt</button>` : ''}
+                    <button class="btn btn-danger" style="flex:1;padding:8px;font-size:12px" onclick="deleteFeedback('${d.id}')">🗑️ Löschen</button>
+                </div>
+            </div>`;
+        });
+        main.innerHTML = tabsHtml + `<div style="padding:8px 0">${rows.join('')}</div>`;
+    } catch (e) {
+        main.innerHTML = tabsHtml + `<div class="empty-state">Fehler: ${escapeHtml(e.message)}</div>`;
+    }
+}
+
+async function markFeedbackDone(id) {
+    try {
+        await db.collection('feedback').doc(id).update({ status: 'erledigt' });
+        showToast('Als erledigt markiert');
+        showAdminFeedbackList();
+    } catch (e) { showToast('Fehler: ' + e.message); }
+}
+
+async function deleteFeedback(id) {
+    if (!confirm('Feedback wirklich löschen?')) return;
+    try {
+        await db.collection('feedback').doc(id).delete();
+        showToast('Gelöscht');
+        showAdminFeedbackList();
+    } catch (e) { showToast('Fehler: ' + e.message); }
+}
+
 showChatsScreen = function() {
     if (!requireAuth('Chats zu nutzen')) return;
     updateHeader('chats');
     qSetChatPageClass('chats');
-    qSetLoading('<div class="chat-list-skeleton">' + skeletonCards(5) + '</div>');
+
+    const tabsHtml = isAdminAccount() ? `<div class="admin-tabs"><button class="admin-tab active" data-tab="chats" onclick="switchAdminTab('chats')">💬 Chats</button><button class="admin-tab" data-tab="feedback" onclick="switchAdminTab('feedback')">📋 Feedback</button></div>` : '';
+    qSetLoading(tabsHtml + '<div class="chat-list-skeleton">' + skeletonCards(5) + '</div>');
 
     if (chatsUnsubscribe) chatsUnsubscribe();
     chatsUnsubscribe = db.collection('chats')
@@ -164,7 +232,7 @@ showChatsScreen = function() {
                 });
 
             if (!docs.length) {
-                document.getElementById('main-content').innerHTML = '<div class="empty-state">Noch keine Chats</div>';
+                document.getElementById('main-content').innerHTML = tabsHtml + '<div class="empty-state">Noch keine Chats</div>';
                 return;
             }
 
@@ -189,9 +257,9 @@ showChatsScreen = function() {
                     </div>
                 </div>`;
             }));
-            document.getElementById('main-content').innerHTML = `<div class="chat-list-page">${rows.join('')}</div>`;
+            document.getElementById('main-content').innerHTML = tabsHtml + `<div class="chat-list-page">${rows.join('')}</div>`;
         }, err => {
-            document.getElementById('main-content').innerHTML = `<div class="empty-state">Chat-Fehler: ${escapeHtml(err.message)}</div>`;
+            document.getElementById('main-content').innerHTML = tabsHtml + `<div class="empty-state">Chat-Fehler: ${escapeHtml(err.message)}</div>`;
         });
 };
 
