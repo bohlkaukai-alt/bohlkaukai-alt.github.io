@@ -92,6 +92,7 @@ const oldAfterSuccessfulAuth = afterSuccessfulAuth;
 afterSuccessfulAuth = function() {
     oldAfterSuccessfulAuth();
     startUnreadBadgeListener();
+    startFeedbackBadgeListener();
     setTimeout(() => maybeStartTutorial(), 800);
     if (isGuest()) {
         const createBtn = document.querySelector('[data-page="create"]');

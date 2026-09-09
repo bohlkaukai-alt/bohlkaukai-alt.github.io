@@ -129,6 +129,32 @@ function updateNavUnreadBadge(total) {
     });
     updateAppBadge(total);
 }
+
+function updateFeedbackBadge(count) {
+    const btn = document.querySelector('.admin-tab[data-tab="feedback"]');
+    if (!btn) return;
+    let b = btn.querySelector('.nav-badge');
+    if (count && !b) {
+        b = document.createElement('b');
+        b.className = 'nav-badge';
+        btn.appendChild(b);
+    }
+    if (b) {
+        b.textContent = count > 99 ? '99+' : String(count);
+        b.style.display = count ? 'inline-flex' : 'none';
+    }
+}
+
+let feedbackUnsubscribe = null;
+function startFeedbackBadgeListener() {
+    if (feedbackUnsubscribe) feedbackUnsubscribe();
+    if (!currentUser || !isAdminAccount()) return;
+    feedbackUnsubscribe = db.collection('feedback')
+        .where('status', '==', 'offen')
+        .onSnapshot(snap => {
+            updateFeedbackBadge(snap.size);
+        }, () => updateFeedbackBadge(0));
+}
 startUnreadBadgeListener = function() {
     if (unreadUnsubscribe) unreadUnsubscribe();
     if (!currentUser) return;
