@@ -131,7 +131,7 @@ function openDownloadModal() {
                     </div>
                     <span class="material-icons download-arrow">download</span>
                 </a>
-                <a href="${releaseBase}/MiniJob.Finder.Setup.1.0.0.exe" class="download-option" download>
+                <a href="${releaseBase}/MiniJob%20Finder%20Setup%201.1.0.exe" class="download-option" download>
                     <div class="download-icon">🖥️</div>
                     <div class="download-info">
                         <strong>Windows</strong>
