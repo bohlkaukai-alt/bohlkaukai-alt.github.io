@@ -836,6 +836,14 @@ body[data-device="desktop"] .login-screen {
     align-items: center;
 }
 
+html[data-device="desktop"] #app:has(.login-screen),
+body[data-device="desktop"] #app:has(.login-screen) {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+        "header"
+        "main";
+}
+
 html[data-device="desktop"] .login-card,
 body[data-device="desktop"] .login-card {
     width: min(100%, 520px);
