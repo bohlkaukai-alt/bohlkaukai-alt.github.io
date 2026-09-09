@@ -457,7 +457,6 @@ showProfileScreen = function() {
 
 showSettingsScreen = function() {
     updateHeader('settings');
-    const guestEnabled = currentUser?.guestAccessEnabled === true;
     document.getElementById('main-content').innerHTML = `<div class="settings-page">
         <h2>Einstellungen</h2>
         ${isGuest() ? '<div class="card" style="background:var(--accent-orange);color:#fff;cursor:auto;margin-bottom:8px"><strong>👤 Gastmodus</strong><p class="small-muted" style="color:rgba(255,255,255,0.85)">Du bist als Gast angemeldet. Manche Funktionen sind eingeschränkt.</p><button class="btn btn-outline" style="margin-top:8px;border-color:rgba(255,255,255,0.5);color:#fff" onclick="logout()">Abmelden</button></div>' : ''}
@@ -467,13 +466,6 @@ showSettingsScreen = function() {
                 <span>🛠️ Admin-Modus</span>
                 <label class="switch">
                     <input type="checkbox" ${localStorage.getItem('mf_admin_mode') === 'on' ? 'checked' : ''} onchange="localStorage.setItem('mf_admin_mode', this.checked?'on':'off'); showToast(this.checked?'Admin-Modus aktiviert':'Admin-Modus deaktiviert')">
-                    <i></i>
-                </label>
-            </div>
-            <div class="settings-item">
-                <span>👤 Gastzugang erlauben</span>
-                <label class="switch">
-                    <input type="checkbox" ${guestEnabled ? 'checked' : ''} onchange="toggleGuestAccess(this.checked)">
                     <i></i>
                 </label>
             </div>
@@ -490,19 +482,6 @@ showSettingsScreen = function() {
         </div>
     </div>`;
 };
-
-async function toggleGuestAccess(enabled) {
-    if (!isAdminAccount()) return;
-    try {
-        await db.collection('users').doc(currentUser.uid).set({ guestAccessEnabled: enabled }, { merge: true });
-        currentUser.guestAccessEnabled = enabled;
-        db.clearPersistence().catch(() => {});
-        showToast(enabled ? 'Gastzugang aktiviert' : 'Gastzugang deaktiviert');
-    } catch (e) {
-        showToast('Fehler: ' + e.message);
-    }
-    showSettingsScreen();
-}
 
 document.addEventListener('click', (e) => {
     if (!e.target.closest('.chat-context-menu') && !e.target.closest('.chat-menu-btn')) closeChatMenus();
