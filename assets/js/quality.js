@@ -373,26 +373,31 @@ sendChatMessage = async function(chatId) {
     if (!text) return;
     input.value = '';
 
-    const chatRef = db.collection('chats').doc(chatId);
-    const snap = await chatRef.get();
-    const chat = snap.exists ? snap.data() : {};
-    const others = (chat.participants || []).filter(uid => uid !== currentUser.uid);
+    try {
+        const chatRef = db.collection('chats').doc(chatId);
+        const snap = await chatRef.get().catch(() => null);
+        const chat = snap?.exists ? snap.data() : {};
+        const others = (chat.participants || []).filter(uid => uid !== currentUser.uid);
 
-    await chatRef.collection('messages').add({
-        text,
-        senderId: currentUser.uid,
-        senderName: currentUser.name || currentUser.email,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+        await chatRef.collection('messages').add({
+            text,
+            senderId: currentUser.uid,
+            senderName: currentUser.name || currentUser.email,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
 
-    const upd = {
-        lastMessage: text,
-        lastSenderId: currentUser.uid,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
-    others.forEach(uid => upd[`unreadCounts.${uid}`] = firebase.firestore.FieldValue.increment(1));
-    upd[`unreadCounts.${currentUser.uid}`] = 0;
-    await chatRef.set(upd, { merge: true });
+        const upd = {
+            lastMessage: text,
+            lastSenderId: currentUser.uid,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        others.forEach(uid => upd[`unreadCounts.${uid}`] = firebase.firestore.FieldValue.increment(1));
+        upd[`unreadCounts.${currentUser.uid}`] = 0;
+        await chatRef.set(upd, { merge: true });
+    } catch (e) {
+        console.error('Nachricht senden fehlgeschlagen:', e);
+        showToast('Nachricht konnte nicht gesendet werden: ' + (e.message || e));
+    }
 };
 
 togglePinnedChat = async function(chatId) {

@@ -422,18 +422,41 @@ showChatsScreen = function() {
 };
 startChatForJob = async function(jobId, applyMessage = false) {
     if (!requireAuth('Nachrichten zu senden')) return;
-    const jobDoc = await db.collection('jobs').doc(jobId).get(); const job = jobDoc.data(); if (!job) { showToast('Job nicht gefunden'); return; } if (job.createdBy === currentUser.uid) { showToast('Das ist dein eigener Job'); return; }
-    const participants = [currentUser.uid, job.createdBy].sort(); const key = participants.join('_');
-    const existing = await db.collection('chats').where('jobId','==',jobId).where('participantsKey','==',key).limit(1).get(); let chatId;
-    if (!existing.empty) chatId = existing.docs[0].id; else { const ref = await db.collection('chats').add({ jobId, jobTitle:job.title, ownerId:job.createdBy, requesterId:currentUser.uid, participants, participantsKey:key, createdAt:firebase.firestore.FieldValue.serverTimestamp(), updatedAt:firebase.firestore.FieldValue.serverTimestamp(), lastMessage:'', unreadCounts:{}, pinnedBy:{}, deletedFor:{} }); chatId = ref.id; }
-    navigateTo('chat', chatId); if (applyMessage) setTimeout(()=>{ const inp=document.getElementById('chat-input'); if(inp && !inp.value) inp.value = `Hallo, ich möchte mich für „${job.title}“ bewerben.`; },400);
+    try {
+        const jobDoc = await db.collection('jobs').doc(jobId).get().catch(()=>null); 
+        const job = jobDoc?.data(); 
+        if (!job) { showToast('Job nicht gefunden'); return; } 
+        if (job.createdBy === currentUser.uid) { showToast('Das ist dein eigener Job'); return; }
+        const participants = [currentUser.uid, job.createdBy].sort(); const key = participants.join('_');
+        const existing = await db.collection('chats').where('jobId','==',jobId).where('participantsKey','==',key).limit(1).get().catch(()=>({empty:true,docs:[]})); 
+        let chatId;
+        if (!existing.empty) chatId = existing.docs[0].id; 
+        else { 
+            const ref = await db.collection('chats').add({ 
+                jobId, jobTitle:job.title, ownerId:job.createdBy, requesterId:currentUser.uid, 
+                participants, participantsKey:key, 
+                createdAt:firebase.firestore.FieldValue.serverTimestamp(), 
+                updatedAt:firebase.firestore.FieldValue.serverTimestamp(), 
+                lastMessage:'', lastSenderId:'', unreadCounts:{}, pinnedBy:{}, deletedFor:{} 
+            }); 
+            chatId = ref.id; 
+        }
+        navigateTo('chat', chatId); 
+        if (applyMessage) setTimeout(()=>{ 
+            const inp=document.getElementById('chat-input'); 
+            if(inp && !inp.value) inp.value = `Hallo, ich möchte mich für „${job.title}“ bewerben.`; 
+        },400);
+    } catch(e) {
+        console.error('Chat erstellen fehlgeschlagen:', e);
+        showToast('Chat konnte nicht erstellt werden: ' + (e.message || e));
+    }
 };
 showChatScreen = async function(chatId) {
     updateHeader('chat'); await db.collection('chats').doc(chatId).update({ [`unreadCounts.${currentUser.uid}`]: 0, [`lastReadAt.${currentUser.uid}`]: firebase.firestore.FieldValue.serverTimestamp() }).catch(()=>{});
     document.getElementById('main-content').innerHTML = `<div class="chat-shell"><div class="chat-options"><button class="icon-pill" onclick="togglePinnedChat('${chatId}')">📌 Anpinnen</button><button class="icon-pill" onclick="markChatUnread('${chatId}')">📩 Ungelesen</button><button class="icon-pill" onclick="reportChat('${chatId}')">🚩 Melden</button><button class="icon-pill danger" onclick="deleteChatForMe('${chatId}')">🗑️ Löschen</button></div><div id="chat-messages" class="chat-messages"><div class="spinner"></div></div><div class="chat-input-bar"><input id="chat-input" class="form-input" style="margin:0" placeholder="Nachricht schreiben..." onkeydown="if(event.key==='Enter') sendChatMessage('${chatId}')"><button class="icon-circle" onclick="sendChatMessage('${chatId}')"><span class="material-icons">send</span></button></div></div>`;
     if (messagesUnsubscribe) messagesUnsubscribe(); messagesUnsubscribe = db.collection('chats').doc(chatId).collection('messages').orderBy('createdAt','asc').onSnapshot(snap => { const box=document.getElementById('chat-messages'); if(!box)return; if(snap.empty){ box.innerHTML='<div class="empty-state">Schreibe die erste Nachricht</div>'; return; } let inserted = false; box.innerHTML = snap.docs.map(d => { const m=d.data(); const sent=m.senderId===currentUser.uid; const sep = !sent && !inserted ? (inserted=true, '<div class="new-message-sep">Neue Nachrichten</div>') : ''; return `${sep}<div class="msg-wrapper ${sent?'sent':'received'}"><div class="msg-bubble ${sent?'sent':'received'}">${escapeHtml(m.text)}</div><div class="msg-time">${formatRelative(m.createdAt)}</div></div>`; }).join(''); box.scrollTop=box.scrollHeight; });
 };
-sendChatMessage = async function(chatId) { const input=document.getElementById('chat-input'); const text=input?.value.trim(); if(!text)return; input.value=''; const chatDoc=await db.collection('chats').doc(chatId).get(); const chat=chatDoc.data(); const others=(chat.participants||[]).filter(id=>id!==currentUser.uid); await db.collection('chats').doc(chatId).collection('messages').add({ text, senderId:currentUser.uid, senderName:currentUser.name||currentUser.email, createdAt:firebase.firestore.FieldValue.serverTimestamp() }); const upd={ lastMessage:text, updatedAt:firebase.firestore.FieldValue.serverTimestamp() }; others.forEach(uid => upd[`unreadCounts.${uid}`]=firebase.firestore.FieldValue.increment(1)); await db.collection('chats').doc(chatId).update(upd); };
+sendChatMessage = async function(chatId) { try { const input=document.getElementById('chat-input'); const text=input?.value.trim(); if(!text)return; input.value=''; const chatDoc=await db.collection('chats').doc(chatId).get().catch(()=>null); const chat=chatDoc?.data()||{}; const others=(chat.participants||[]).filter(id=>id!==currentUser.uid); await db.collection('chats').doc(chatId).collection('messages').add({ text, senderId:currentUser.uid, senderName:currentUser.name||currentUser.email, createdAt:firebase.firestore.FieldValue.serverTimestamp() }); const upd={ lastMessage:text, lastSenderId:currentUser.uid, updatedAt:firebase.firestore.FieldValue.serverTimestamp() }; others.forEach(uid => upd[`unreadCounts.${uid}`]=firebase.firestore.FieldValue.increment(1)); upd[`unreadCounts.${currentUser.uid}`] = 0; await db.collection('chats').doc(chatId).set(upd, {merge:true}); } catch(e) { console.error('Nachricht senden fehlgeschlagen:', e); showToast('Nachricht konnte nicht gesendet werden'); } };
 async function togglePinnedChat(chatId) { await db.collection('chats').doc(chatId).set({ pinnedBy:{ [currentUser.uid]: true } }, { merge:true }); showToast('Chat angepinnt'); }
 async function markChatUnread(chatId) { await db.collection('chats').doc(chatId).update({ [`unreadCounts.${currentUser.uid}`]: firebase.firestore.FieldValue.increment(1) }); showToast('Als ungelesen markiert'); }
 async function reportChat(chatId) { const reason = prompt('Warum möchtest du den Chat melden?'); if (!reason) return; await db.collection('reports').add({ chatId, reason, reporterId: currentUser.uid, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); showToast('Meldung gesendet'); }
