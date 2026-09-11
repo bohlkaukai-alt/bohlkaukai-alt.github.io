@@ -1900,3 +1900,12 @@ body[data-device="mobile"] #social-footer {
 .download-option-alt { border-style: dashed !important; }
 
 
+
+/* ---------- Email Validation Update ---------- */
+#email-validation-error {
+    margin-top: -6px;
+    margin-bottom: 12px;
+}
+input[type="email"].form-input:invalid {
+    border-color: rgba(239, 68, 68, 0.55);
+}
