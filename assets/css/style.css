@@ -1988,3 +1988,37 @@ input[type="email"].form-input:invalid {
     from { opacity: 0; transform: translateY(-4px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+
+/* ---------- Login Password Reset Direct Update ---------- */
+.login-reset-row {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin: 4px 0 8px;
+}
+
+.forgot-password-link {
+    width: auto;
+    margin: 0;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-weight: 900;
+    color: var(--primary-blue);
+    text-decoration: none;
+}
+
+.forgot-password-link:hover {
+    text-decoration: underline;
+}
+
+.modal-content #reset-email {
+    margin-top: 10px;
+}
+
+
+/* ---------- Password Hint Register Only Update ---------- */
+/* Passwort-Hinweis wird nur beim Registrieren angezeigt. */
+.password-hint:not([data-password-hint-for="reg-password"]) {
+    display: none !important;
+}
