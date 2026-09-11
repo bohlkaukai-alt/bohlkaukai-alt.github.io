@@ -59,7 +59,7 @@ showRegister = function() {
             <div id="auth-error" class="auth-error hidden"></div>
             <input id="reg-name" class="form-input" placeholder="Name" autocomplete="name">
             <input id="reg-city" class="form-input" placeholder="Wohnort / Stadt" autocomplete="address-level2">
-            <input id="reg-email" class="form-input" placeholder="E-Mail" autocomplete="email">
+            <input id="reg-email" type="email" inputmode="email" autocomplete="email" class="form-input" placeholder="E-Mail" autocomplete="email">
             <input id="reg-password" type="password" class="form-input" placeholder="Passwort" autocomplete="new-password">
             <input id="reg-birthdate" type="date" class="form-input">
             <div class="device-choice compact"><button onclick="setManualDevice('mobile')">Handy</button><button onclick="setManualDevice('tablet')">Tablet/iPad</button><button onclick="setManualDevice('desktop')">PC</button></div>
