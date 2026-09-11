@@ -1,0 +1,587 @@
+// ---------- Quality / Chat / Feedback / Badge Update ----------
+let qualityNavigationLocked = false;
+const qualityUserCache = window.qualityUserCache || (window.qualityUserCache = {});
+const localDeletedChatsKey = () => currentUser ? `mf_deleted_chats_${currentUser.uid}` : 'mf_deleted_chats_guest';
+const pinnedChatsKey = () => currentUser ? `mf_pinned_chats_${currentUser.uid}` : 'mf_pinned_chats_guest';
+
+function qReadList(key) {
+    try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch (e) { return []; }
+}
+function qWriteList(key, list) {
+    try { localStorage.setItem(key, JSON.stringify([...new Set(list)])); } catch (e) {}
+}
+function qIsDeletedChat(chatId) { return qReadList(localDeletedChatsKey()).includes(chatId); }
+function qToggleLocalPinned(chatId) {
+    const key = pinnedChatsKey();
+    const list = qReadList(key);
+    const exists = list.includes(chatId);
+    const next = exists ? list.filter(id => id !== chatId) : [chatId, ...list];
+    qWriteList(key, next);
+    return !exists;
+}
+function qIsPinned(chatId, chatData = {}) {
+    return !!chatData.pinnedBy?.[currentUser?.uid] || qReadList(pinnedChatsKey()).includes(chatId);
+}
+function qTimestampMs(value) {
+    if (!value) return 0;
+    if (value.toMillis) return value.toMillis();
+    if (value.seconds) return value.seconds * 1000;
+    const d = new Date(value).getTime();
+    return Number.isFinite(d) ? d : 0;
+}
+async function qGetUser(uid) {
+    if (!uid) return null;
+    if (qualityUserCache[uid]) return qualityUserCache[uid];
+    try {
+        const doc = await db.collection('users').doc(uid).get();
+        const data = doc.exists ? doc.data() : null;
+        qualityUserCache[uid] = data || { name: 'Nutzer' };
+        return qualityUserCache[uid];
+    } catch (e) {
+        return { name: 'Nutzer' };
+    }
+}
+function qOtherParticipant(chat) {
+    return (chat.participants || []).find(uid => uid !== currentUser?.uid);
+}
+function qPreviewName(chat, otherUser) {
+    return otherUser?.name || chat.otherName || chat.jobTitle || 'Chat';
+}
+function qRenderChatMenu(chatId) {
+    closeChatMenus();
+    const menu = document.createElement('div');
+    menu.className = 'chat-context-menu';
+    menu.id = 'chat-menu-' + chatId;
+    menu.innerHTML = `
+        <button onclick="togglePinnedChat('${chatId}')"><span>📌</span> Anpinnen</button>
+        <button onclick="markChatUnread('${chatId}')"><span>📩</span> Als ungelesen markieren</button>
+        <button onclick="reportChat('${chatId}')"><span>🚩</span> Melden</button>
+        <button class="danger" onclick="deleteChatForMe('${chatId}')"><span>🗑️</span> Löschen</button>
+    `;
+    document.body.appendChild(menu);
+    const btn = document.querySelector(`[data-chat-menu="${chatId}"]`);
+    if (btn) {
+        const r = btn.getBoundingClientRect();
+        menu.style.top = Math.min(window.innerHeight - menu.offsetHeight - 12, r.bottom + 6) + 'px';
+        menu.style.left = Math.max(12, Math.min(window.innerWidth - 210, r.right - 200)) + 'px';
+    }
+    setTimeout(() => document.addEventListener('click', closeChatMenus, { once: true }), 0);
+}
+function closeChatMenus() {
+    document.querySelectorAll('.chat-context-menu').forEach(m => m.remove());
+}
+function qSetChatPageClass(page) {
+    document.body.classList.toggle('is-chat-open', page === 'chat');
+    const nav = document.getElementById('bottom-nav');
+    if (nav) nav.classList.toggle('chat-hidden-nav', page === 'chat');
+}
+function qSetLoading(html = '<div class="spinner"></div>') {
+    const main = document.getElementById('main-content');
+    if (main) main.innerHTML = html;
+}
+
+if (typeof navigateTo === 'function' && !navigateTo.__qualityWrapped) {
+    const oldNavigateTo = navigateTo;
+    navigateTo = function(page, data = null, addToHistory = true) {
+        if (qualityNavigationLocked) return;
+        qualityNavigationLocked = true;
+        qSetChatPageClass(page);
+        requestAnimationFrame(() => {
+            oldNavigateTo(page, data, addToHistory);
+            qSetChatPageClass(page);
+            setTimeout(() => { qualityNavigationLocked = false; }, 80);
+        });
+    };
+    navigateTo.__qualityWrapped = true;
+}
+
+if (typeof updateHeader === 'function' && !updateHeader.__qualityWrapped) {
+    const oldUpdateHeader = updateHeader;
+    updateHeader = function(page) {
+        oldUpdateHeader(page);
+        qSetChatPageClass(page);
+        if (typeof ensureSocialFooter === 'function') setTimeout(ensureSocialFooter, 0);
+    };
+    updateHeader.__qualityWrapped = true;
+}
+
+async function updateAppBadge(count) {
+    const n = Math.max(0, Number(count) || 0);
+    try {
+        if ('setAppBadge' in navigator && 'clearAppBadge' in navigator) {
+            if (n > 0) await navigator.setAppBadge(n);
+            else await navigator.clearAppBadge();
+        }
+    } catch (e) {}
+}
+function updateNavUnreadBadge(total) {
+    document.querySelectorAll('[data-page="chats"]').forEach(btn => {
+        let b = btn.querySelector('.nav-badge');
+        if (total && !b) {
+            b = document.createElement('b');
+            b.className = 'nav-badge';
+            btn.appendChild(b);
+        }
+        if (b) {
+            b.textContent = total > 99 ? '99+' : String(total);
+            b.style.display = total ? 'inline-flex' : 'none';
+        }
+    });
+    updateAppBadge(total);
+}
+
+function updateFeedbackBadge(count) {
+    const btn = document.querySelector('.admin-tab[data-tab="feedback"]');
+    if (!btn) return;
+    let b = btn.querySelector('.nav-badge');
+    if (count && !b) {
+        b = document.createElement('b');
+        b.className = 'nav-badge';
+        btn.appendChild(b);
+    }
+    if (b) {
+        b.textContent = count > 99 ? '99+' : String(count);
+        b.style.display = count ? 'inline-flex' : 'none';
+    }
+}
+
+let feedbackUnsubscribe = null;
+function startFeedbackBadgeListener() {
+    if (feedbackUnsubscribe) feedbackUnsubscribe();
+    if (!currentUser || !isAdminAccount()) return;
+    feedbackUnsubscribe = db.collection('feedback')
+        .where('status', '==', 'offen')
+        .onSnapshot(snap => {
+            updateFeedbackBadge(snap.size);
+        }, () => updateFeedbackBadge(0));
+}
+startUnreadBadgeListener = function() {
+    if (unreadUnsubscribe) unreadUnsubscribe();
+    if (!currentUser) return;
+    unreadUnsubscribe = db.collection('chats')
+        .where('participants','array-contains',currentUser.uid)
+        .onSnapshot(snap => {
+            let total = 0;
+            snap.docs.forEach(d => {
+                if (qIsDeletedChat(d.id)) return;
+                total += Number(d.data().unreadCounts?.[currentUser.uid] || 0);
+            });
+            updateNavUnreadBadge(total);
+        }, () => updateNavUnreadBadge(0));
+};
+
+function switchAdminTab(tab) {
+    document.querySelectorAll('.admin-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+    if (tab === 'feedback') showAdminFeedbackList();
+    else showChatsScreen();
+}
+
+async function showAdminFeedbackList() {
+    const main = document.getElementById('main-content');
+    const tabsHtml = isAdminAccount() ? `<div class="admin-tabs"><button class="admin-tab" data-tab="chats" onclick="switchAdminTab('chats')">💬 Chats</button><button class="admin-tab active" data-tab="feedback" onclick="switchAdminTab('feedback')">📋 Feedback</button></div>` : '';
+    main.innerHTML = tabsHtml + '<div class="spinner"></div>';
+    try {
+        const snap = await db.collection('feedback').orderBy('createdAt', 'desc').get();
+        if (snap.empty) {
+            main.innerHTML = tabsHtml + '<div class="empty-state">Noch kein Feedback</div>';
+            return;
+        }
+        const rows = snap.docs.map(d => {
+            const f = d.data();
+            const date = f.createdAt?.toDate ? f.createdAt.toDate() : new Date(f.createdAt || 0);
+            const dateStr = date.toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
+            const typeColors = { 'Fehler': '#EF4444', 'Verbesserung': '#22C55E', 'Sonstiges': '#64748B' };
+            const typeColor = typeColors[f.type] || '#64748B';
+            const statusClass = f.status === 'erledigt' ? 'status-done' : 'status-offen';
+            const statusLabel = f.status === 'erledigt' ? '✓ Erledigt' : '● Offen';
+            return `<div class="card feedback-admin-card" style="cursor:auto">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px">
+                    <div>
+                        <strong>${escapeHtml(f.name || 'Anonym')}</strong>
+                        <p class="small-muted">${escapeHtml(f.email || '')}</p>
+                    </div>
+                    <span class="status-badge ${statusClass}" style="font-size:11px">${statusLabel}</span>
+                </div>
+                <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+                    <span style="background:${typeColor};color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">${escapeHtml(f.type || 'Sonstiges')}</span>
+                    <span class="small-muted">${dateStr}</span>
+                </div>
+                <p style="margin:0 0 10px;line-height:1.4">${escapeHtml(f.text || '')}</p>
+                <div style="display:flex;gap:6px">
+                    ${f.status !== 'erledigt' ? `<button class="btn btn-accent" style="flex:1;padding:8px;font-size:12px" onclick="markFeedbackDone('${d.id}')">✓ Erledigt</button>` : ''}
+                    <button class="btn btn-danger" style="flex:1;padding:8px;font-size:12px" onclick="deleteFeedback('${d.id}')">🗑️ Löschen</button>
+                </div>
+            </div>`;
+        });
+        main.innerHTML = tabsHtml + `<div style="padding:8px 0">${rows.join('')}</div>`;
+    } catch (e) {
+        main.innerHTML = tabsHtml + `<div class="empty-state">Fehler: ${escapeHtml(e.message)}</div>`;
+    }
+}
+
+async function markFeedbackDone(id) {
+    try {
+        await db.collection('feedback').doc(id).update({ status: 'erledigt' });
+        showToast('Als erledigt markiert');
+        showAdminFeedbackList();
+    } catch (e) { showToast('Fehler: ' + e.message); }
+}
+
+async function deleteFeedback(id) {
+    if (!confirm('Feedback wirklich löschen?')) return;
+    try {
+        await db.collection('feedback').doc(id).delete();
+        showToast('Gelöscht');
+        showAdminFeedbackList();
+    } catch (e) { showToast('Fehler: ' + e.message); }
+}
+
+showChatsScreen = function() {
+    if (!requireAuth('Chats zu nutzen')) return;
+    updateHeader('chats');
+    qSetChatPageClass('chats');
+
+    const tabsHtml = isAdminAccount() ? `<div class="admin-tabs"><button class="admin-tab active" data-tab="chats" onclick="switchAdminTab('chats')">💬 Chats</button><button class="admin-tab" data-tab="feedback" onclick="switchAdminTab('feedback')">📋 Feedback</button></div>` : '';
+    qSetLoading(tabsHtml + '<div class="chat-list-skeleton">' + skeletonCards(5) + '</div>');
+
+    if (chatsUnsubscribe) chatsUnsubscribe();
+    chatsUnsubscribe = db.collection('chats')
+        .where('participants', 'array-contains', currentUser.uid)
+        .onSnapshot(async snap => {
+            const docs = snap.docs
+                .filter(d => !qIsDeletedChat(d.id) && !d.data().deletedFor?.[currentUser.uid])
+                .map(d => ({ id: d.id, data: d.data() }))
+                .sort((a,b) => {
+                    const pinDiff = Number(qIsPinned(b.id, b.data)) - Number(qIsPinned(a.id, a.data));
+                    if (pinDiff) return pinDiff;
+                    return qTimestampMs(b.data.updatedAt) - qTimestampMs(a.data.updatedAt);
+                });
+
+            if (!docs.length) {
+                document.getElementById('main-content').innerHTML = tabsHtml + '<div class="empty-state">Noch keine Chats</div>';
+                return;
+            }
+
+            const rows = await Promise.all(docs.map(async item => {
+                const c = item.data;
+                const otherUid = qOtherParticipant(c);
+                const other = await qGetUser(otherUid);
+                const unread = Number(c.unreadCounts?.[currentUser.uid] || 0);
+                const pinned = qIsPinned(item.id, c);
+                const initial = escapeHtml((qPreviewName(c, other).charAt(0) || 'C').toUpperCase());
+                return `<div class="card chat-row ${pinned ? 'pinned' : ''}" onclick="navigateTo('chat','${item.id}')">
+                    <div class="chat-avatar" style="background:${escapeHtml(other?.profileColor || '#2563EB')}">${initial}</div>
+                    <div class="chat-row-main">
+                        <div class="chat-title-line"><strong>${escapeHtml(qPreviewName(c, other))}</strong>${pinned ? '<span class="pinned-mini">📌</span>' : ''}</div>
+                        <p class="small-muted">${escapeHtml(c.jobTitle || '')}</p>
+                        <p class="small-muted">${escapeHtml(c.lastMessage || 'Noch keine Nachricht')}</p>
+                    </div>
+                    <div class="chat-row-side">
+                        <span>${formatRelative(c.updatedAt)}</span>
+                        ${unread ? `<b class="nav-badge">${unread > 99 ? '99+' : unread}</b>` : ''}
+                        <button class="chat-menu-btn" data-chat-menu="${item.id}" onclick="event.stopPropagation(); qRenderChatMenu('${item.id}')" aria-label="Chat-Menü">⋮</button>
+                    </div>
+                </div>`;
+            }));
+            document.getElementById('main-content').innerHTML = tabsHtml + `<div class="chat-list-page">${rows.join('')}</div>`;
+        }, err => {
+            document.getElementById('main-content').innerHTML = tabsHtml + `<div class="empty-state">Chat-Fehler: ${escapeHtml(err.message)}</div>`;
+        });
+};
+
+async function qMarkChatRead(chatId) {
+    try {
+        await db.collection('chats').doc(chatId).update({
+            [`unreadCounts.${currentUser.uid}`]: 0,
+            [`lastReadAt.${currentUser.uid}`]: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    } catch (e) {}
+}
+
+showChatScreen = async function(chatId) {
+    updateHeader('chat');
+    qSetChatPageClass('chat');
+
+    const chatRef = db.collection('chats').doc(chatId);
+    const chatSnap = await chatRef.get().catch(() => null);
+    const chat = chatSnap?.exists ? chatSnap.data() : {};
+    const lastReadMs = qTimestampMs(chat.lastReadAt?.[currentUser.uid]);
+    const unreadBeforeOpen = Number(chat.unreadCounts?.[currentUser.uid] || 0);
+    const unreadSessionKey = `mf_unread_seen_${currentUser.uid}_${chatId}_${qTimestampMs(chat.updatedAt)}`;
+    const shouldScrollToUnread = unreadBeforeOpen > 0 && !sessionStorage.getItem(unreadSessionKey);
+
+    document.getElementById('main-content').innerHTML = `
+        <div class="chat-shell chat-shell-private">
+            <div id="chat-messages" class="chat-messages"><div class="spinner"></div></div>
+            <div class="chat-input-bar">
+                <input id="chat-input" class="form-input" style="margin:0" placeholder="Nachricht schreiben..." onkeydown="if(event.key==='Enter') sendChatMessage('${chatId}')">
+                <button class="icon-circle" onclick="sendChatMessage('${chatId}')" aria-label="Senden"><span class="material-icons">send</span></button>
+            </div>
+        </div>`;
+
+    if (messagesUnsubscribe) messagesUnsubscribe();
+    let firstRender = true;
+
+    messagesUnsubscribe = chatRef.collection('messages').orderBy('createdAt','asc')
+        .onSnapshot(snap => {
+            const box = document.getElementById('chat-messages');
+            if (!box) return;
+            if (snap.empty) {
+                box.innerHTML = '<div class="empty-state">Schreibe die erste Nachricht</div>';
+                qMarkChatRead(chatId);
+                return;
+            }
+
+            let unreadInserted = false;
+            const html = [];
+            snap.docs.forEach(d => {
+                const m = d.data();
+                const sent = m.senderId === currentUser.uid;
+                const createdMs = qTimestampMs(m.createdAt);
+                const isUnreadMessage = !sent && shouldScrollToUnread && createdMs > lastReadMs;
+                if (isUnreadMessage && !unreadInserted) {
+                    html.push(`<div id="first-unread-marker" class="new-message-sep whatsapp-unread-sep"><span>Ungelesene Nachrichten</span></div>`);
+                    unreadInserted = true;
+                }
+                html.push(`<div class="msg-wrapper ${sent ? 'sent' : 'received'}">
+                    <div class="msg-bubble ${sent ? 'sent' : 'received'}">${escapeHtml(m.text)}</div>
+                    <div class="msg-time">${formatDate(m.createdAt)}</div>
+                </div>`);
+            });
+
+            box.innerHTML = html.join('');
+            if (firstRender && shouldScrollToUnread && unreadInserted) {
+                const marker = document.getElementById('first-unread-marker');
+                if (marker) marker.scrollIntoView({ block: 'center' });
+                sessionStorage.setItem(unreadSessionKey, '1');
+            } else {
+                box.scrollTop = box.scrollHeight;
+            }
+
+            firstRender = false;
+            qMarkChatRead(chatId);
+        }, err => {
+            const box = document.getElementById('chat-messages');
+            if (box) box.innerHTML = `<div class="empty-state">Nachrichten-Fehler: ${escapeHtml(err.message)}</div>`;
+        });
+};
+
+sendChatMessage = async function(chatId) {
+    if (!requireAuth('Nachrichten zu senden')) return;
+    const input = document.getElementById('chat-input');
+    const text = input?.value.trim();
+    if (!text) return;
+    input.value = '';
+
+    try {
+        const chatRef = db.collection('chats').doc(chatId);
+        const snap = await chatRef.get().catch(() => null);
+        const chat = snap?.exists ? snap.data() : {};
+        const others = (chat.participants || []).filter(uid => uid !== currentUser.uid);
+
+        await chatRef.collection('messages').add({
+            text,
+            senderId: currentUser.uid,
+            senderName: currentUser.name || currentUser.email,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        const upd = {
+            lastMessage: text,
+            lastSenderId: currentUser.uid,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        others.forEach(uid => upd[`unreadCounts.${uid}`] = firebase.firestore.FieldValue.increment(1));
+        upd[`unreadCounts.${currentUser.uid}`] = 0;
+        await chatRef.set(upd, { merge: true });
+    } catch (e) {
+        console.error('Nachricht senden fehlgeschlagen:', e);
+        showToast('Nachricht konnte nicht gesendet werden: ' + (e.message || e));
+    }
+};
+
+togglePinnedChat = async function(chatId) {
+    const nowPinned = qToggleLocalPinned(chatId);
+    try {
+        await db.collection('chats').doc(chatId).set({ pinnedBy: { [currentUser.uid]: nowPinned } }, { merge: true });
+    } catch (e) {}
+    closeChatMenus();
+    showToast(nowPinned ? 'Chat angepinnt' : 'Chat gelöst');
+    showChatsScreen();
+};
+
+markChatUnread = async function(chatId) {
+    try {
+        await db.collection('chats').doc(chatId).set({
+            unreadCounts: { [currentUser.uid]: 1 }
+        }, { merge: true });
+        showToast('Als ungelesen markiert');
+    } catch (e) {
+        showToast('Konnte nicht markiert werden');
+    }
+    closeChatMenus();
+};
+
+reportChat = async function(chatId) {
+    const reason = prompt('Warum möchtest du den Chat melden?');
+    if (!reason) return;
+    try {
+        await db.collection('reports').add({
+            type: 'chat',
+            chatId,
+            reason,
+            reporterId: currentUser.uid,
+            reporterEmail: currentUser.email,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'offen'
+        });
+        showToast('Meldung gesendet');
+    } catch (e) {
+        showToast('Meldung konnte nicht gesendet werden');
+    }
+    closeChatMenus();
+};
+
+deleteChatForMe = async function(chatId) {
+    if (!confirm('Chat aus deiner Liste löschen?')) return;
+    qWriteList(localDeletedChatsKey(), [...qReadList(localDeletedChatsKey()), chatId]);
+    try {
+        await db.collection('chats').doc(chatId).set({ deletedFor: { [currentUser.uid]: true } }, { merge: true });
+    } catch (e) {}
+    closeChatMenus();
+    showToast('Chat ausgeblendet');
+    navigateTo('chats');
+};
+
+showFeedbackScreen = function() {
+    updateHeader('feedback');
+    document.getElementById('main-content').innerHTML = `<div class="form-page feedback-page">
+        <div class="card" style="cursor:auto">
+            <h2>Feedback an Admin senden</h2>
+            <p class="small-muted">Beschreibe den Fehler oder deinen Vorschlag möglichst genau.</p>
+            <select id="feedback-type" class="form-input">
+                <option value="Fehler">Fehler melden</option>
+                <option value="Verbesserung">Verbesserungsvorschlag</option>
+                <option value="Sonstiges">Sonstiges</option>
+            </select>
+            <textarea id="feedback-text" class="form-textarea" placeholder="Was funktioniert nicht oder was soll verbessert werden?"></textarea>
+            <button id="feedback-send-btn" class="btn btn-accent" onclick="sendFeedback()">Feedback senden</button>
+        </div>
+    </div>`;
+};
+
+sendFeedback = async function() {
+    if (!requireAuth('Feedback zu senden')) return;
+    const text = document.getElementById('feedback-text')?.value.trim();
+    const type = document.getElementById('feedback-type')?.value || 'Sonstiges';
+    const btn = document.getElementById('feedback-send-btn');
+    if (!text || text.length < 5) { showToast('Bitte Feedback genauer beschreiben'); return; }
+
+    if (btn) { btn.disabled = true; btn.textContent = 'Wird gesendet...'; }
+
+    const payload = {
+        type,
+        text,
+        userId: currentUser?.uid || null,
+        email: currentUser?.email || null,
+        name: currentUser?.name || null,
+        page: currentPage,
+        userAgent: navigator.userAgent,
+        url: location.href,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        status: 'offen',
+        priority: 'normal'
+    };
+
+    try {
+        await db.collection('feedback').add(payload);
+        showToast('Feedback gesendet');
+        navigateTo('profile');
+    } catch (err) {
+        try {
+            await db.collection('reports').add({ ...payload, type: 'feedback', originalType: type, error: err.message || String(err) });
+            showToast('Feedback als Meldung gesendet');
+            navigateTo('profile');
+        } catch (err2) {
+            const local = JSON.parse(localStorage.getItem('mf_feedback_outbox') || '[]');
+            local.push({ ...payload, createdAt: new Date().toISOString(), firestoreError: err.message || String(err2) });
+            localStorage.setItem('mf_feedback_outbox', JSON.stringify(local));
+            showToast('Feedback lokal gespeichert. Firestore-Regeln prüfen.');
+        }
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Feedback senden'; }
+    }
+};
+
+showProfileScreen = function() {
+    updateHeader('profile');
+    const name = currentUser?.name || '';
+    const city = currentUser?.city || localStorage.getItem('mf_city') || '';
+    document.getElementById('main-content').innerHTML = `<div class="profile-page">
+        ${isGuest() ? '<div class="card" style="background:var(--accent-orange);color:#fff;cursor:auto;margin-bottom:8px"><strong>👤 Gastmodus</strong><p class="small-muted" style="color:rgba(255,255,255,0.85)">Du browsed als Gast. Registriere dich für vollen Zugriff.</p></div>' : ''}
+        <div class="card profile-head" style="cursor:auto">
+            <div class="profile-avatar" style="background:${escapeHtml(currentUser?.profileColor || 'linear-gradient(135deg, var(--primary-blue), var(--accent-orange))')}">${escapeHtml((name || '?').charAt(0).toUpperCase())}</div>
+            <h2>${escapeHtml(name)}</h2>
+            <p class="small-muted">${escapeHtml(city)}</p>
+            <p>${escapeHtml(currentUser?.bio || '')}</p>
+            ${isAdmin() ? '<span class="admin-badge">Admin</span>' : ''}
+        </div>
+        <div class="stats-grid">
+            <div class="card"><strong id="profile-active-jobs">…</strong><span>Aktive Jobs</span></div>
+            <div class="card"><strong id="profile-rating">⭐ …</strong><span>Bewertung</span></div>
+            <div class="card"><strong id="profile-rating-count">…</strong><span>Anzahl</span></div>
+        </div>
+        ${isGuest() ? '' : '<div class="card" onclick="navigateTo(\'my-jobs\')"><strong>Meine Jobs</strong><p class="small-muted">Eigene Anzeigen verwalten</p></div>'}
+        <div class="card" onclick="navigateTo('ratings')"><strong>Bewertungen</strong><p class="small-muted">Bewertungen ansehen</p></div>
+        ${isGuest() ? '' : '<div class="card" onclick="navigateTo(\'edit-profile\')"><strong>Profil bearbeiten</strong></div>'}
+        <div class="card" onclick="navigateTo('settings')"><strong>Einstellungen</strong><p class="small-muted">Datenschutz, Cookies, Design, Feedback</p></div>
+        <button class="btn btn-danger" onclick="logout()">${isGuest() ? 'Gast-Session beenden' : 'Abmelden'}</button>
+    </div>`;
+
+    Promise.all([
+        db.collection('jobs').where('createdBy','==',currentUser.uid).get().catch(() => null),
+        db.collection('ratings').where('toUserId','==',currentUser.uid).get().catch(() => null)
+    ]).then(([jobsSnap, ratingsSnap]) => {
+        const activeJobs = jobsSnap ? jobsSnap.docs.filter(d => ['offen','reserviert'].includes(d.data().status || 'offen')).length : 0;
+        const ratings = ratingsSnap ? ratingsSnap.docs.map(d => d.data().stars || d.data().rating || 0).filter(Boolean) : [];
+        const avg = ratings.length ? (ratings.reduce((a,b)=>a+b,0)/ratings.length).toFixed(1) : '0.0';
+        const a = document.getElementById('profile-active-jobs');
+        const r = document.getElementById('profile-rating');
+        const c = document.getElementById('profile-rating-count');
+        if (a) a.textContent = activeJobs;
+        if (r) r.textContent = '⭐ ' + avg;
+        if (c) c.textContent = ratings.length;
+    });
+};
+
+showSettingsScreen = function() {
+    updateHeader('settings');
+    document.getElementById('main-content').innerHTML = `<div class="settings-page">
+        <h2>Einstellungen</h2>
+        ${isGuest() ? '<div class="card" style="background:var(--accent-orange);color:#fff;cursor:auto;margin-bottom:8px"><strong>👤 Gastmodus</strong><p class="small-muted" style="color:rgba(255,255,255,0.85)">Du bist als Gast angemeldet. Manche Funktionen sind eingeschränkt.</p><button class="btn btn-outline" style="margin-top:8px;border-color:rgba(255,255,255,0.5);color:#fff" onclick="logout()">Abmelden</button></div>' : ''}
+        <div class="card" style="cursor:auto">
+            ${isAdminAccount() ? `
+            <div class="settings-item">
+                <span>🛠️ Admin-Modus</span>
+                <label class="switch">
+                    <input type="checkbox" ${localStorage.getItem('mf_admin_mode') === 'on' ? 'checked' : ''} onchange="localStorage.setItem('mf_admin_mode', this.checked?'on':'off'); showToast(this.checked?'Admin-Modus aktiviert':'Admin-Modus deaktiviert')">
+                    <i></i>
+                </label>
+            </div>
+            ` : ''}
+            <div class="settings-item"><span>Währung</span><select onchange="updateCurrency(this.value)">${Object.keys(currencySymbols).map(c => `<option value="${c}" ${c === currentCurrency ? 'selected' : ''}>${c}</option>`).join('')}</select></div>
+            <div class="settings-item" onclick="toggleTheme()"><span>Design</span><span><span id="theme-status-text">${document.body?.getAttribute('data-theme') === 'dark' ? 'Darkmode' : 'Hellmodus'}</span> <span class="material-icons" style="vertical-align:middle;font-size:18px">contrast</span></span></div>
+            <div class="settings-item" onclick="startTutorial(true)"><span>🎓 Tutorial ansehen</span><span>›</span></div>
+            <div class="settings-item" onclick="navigateTo('feedback')"><span>Feedback senden</span><span>›</span></div>
+            <div class="settings-item" onclick="openCookieSettings()"><span>🍪 Cookies</span><span>Ändern</span></div>
+            <div class="settings-item" onclick="window.open('datenschutz.html','_blank')"><span>🔐 Datenschutzerklärung</span><span>Öffnen</span></div>
+            <div class="settings-item" onclick="window.open('impressum.html','_blank')"><span>ℹ️ Impressum</span><span>Öffnen</span></div>
+            <div class="settings-item" onclick="openDownloadModal()"><span>📥 App herunterladen</span><span>›</span></div>
+            ${!isGuest() ? '<div class="settings-item danger-link" onclick="deleteMyAccount()"><span>🗑️ Account löschen</span><span>Löschen</span></div>' : ''}
+        </div>
+    </div>`;
+};
+
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.chat-context-menu') && !e.target.closest('.chat-menu-btn')) closeChatMenus();
+});
