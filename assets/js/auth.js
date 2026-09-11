@@ -1,3 +1,87 @@
+
+// ---------- E-Mail-Validierung ----------
+const blockedEmailDomains = [
+    'example.com', 'test.com', 'mailinator.com', 'tempmail.com',
+    '10minutemail.com', 'guerrillamail.com', 'yopmail.com', 'trashmail.com'
+];
+
+const commonEmailDomainTypos = {
+    'gmal.com': 'gmail.com',
+    'gmial.com': 'gmail.com',
+    'gmail.de': 'gmail.com',
+    'hotmial.com': 'hotmail.com',
+    'hotmai.com': 'hotmail.com',
+    'outlok.com': 'outlook.com',
+    'outloo.com': 'outlook.com',
+    'web.d': 'web.de',
+    'gmx.d': 'gmx.de'
+};
+
+function normalizeEmail(email) {
+    return String(email || '').trim().toLowerCase();
+}
+
+function validateEmailStrict(email) {
+    const value = normalizeEmail(email);
+
+    if (!value) return { valid: false, message: 'Bitte E-Mail-Adresse eingeben.' };
+    if (value.length > 254) return { valid: false, message: 'Die E-Mail-Adresse ist zu lang.' };
+    if (/\s/.test(value)) return { valid: false, message: 'Die E-Mail-Adresse darf keine Leerzeichen enthalten.' };
+
+    const basicPattern = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+$/i;
+    if (!basicPattern.test(value)) {
+        return { valid: false, message: 'Bitte eine gültige E-Mail-Adresse eingeben, z. B. name@example.de.' };
+    }
+
+    const parts = value.split('@');
+    if (parts.length !== 2) return { valid: false, message: 'Die E-Mail-Adresse darf nur ein @ enthalten.' };
+
+    const local = parts[0];
+    const domain = parts[1];
+
+    if (!local || local.length > 64) return { valid: false, message: 'Der Teil vor dem @ ist ungültig oder zu lang.' };
+    if (local.startsWith('.') || local.endsWith('.') || local.includes('..')) {
+        return { valid: false, message: 'Der Teil vor dem @ enthält ungültige Punkte.' };
+    }
+
+    if (!domain.includes('.') || domain.startsWith('.') || domain.endsWith('.') || domain.includes('..')) {
+        return { valid: false, message: 'Die Domain der E-Mail-Adresse ist ungültig.' };
+    }
+
+    const tld = domain.split('.').pop();
+    if (!tld || tld.length < 2 || !/^[a-z]+$/i.test(tld)) {
+        return { valid: false, message: 'Die Endung der E-Mail-Adresse ist ungültig.' };
+    }
+
+    if (blockedEmailDomains.includes(domain)) {
+        return { valid: false, message: 'Diese E-Mail-Domain ist nicht erlaubt.' };
+    }
+
+    if (commonEmailDomainTypos[domain]) {
+        return { valid: false, message: 'Meintest du ' + local + '@' + commonEmailDomainTypos[domain] + '? Bitte E-Mail korrigieren.' };
+    }
+
+    return { valid: true, email: value };
+}
+
+function showEmailValidationError(message) {
+    const existing = document.getElementById('email-validation-error');
+    if (existing) existing.remove();
+
+    const emailInput = document.getElementById('reg-email') || document.getElementById('login-email');
+    if (!emailInput) {
+        if (typeof showToast === 'function') showToast(message);
+        return;
+    }
+
+    const div = document.createElement('div');
+    div.id = 'email-validation-error';
+    div.className = 'auth-error';
+    div.textContent = message;
+    emailInput.insertAdjacentElement('afterend', div);
+    emailInput.focus();
+}
+
 // ---------- LOGIN / REGISTRIERUNG ----------
 function getAuthErrorMessage(error) {
     const code = error?.code || '';
@@ -50,7 +134,7 @@ function showLoginScreen() {
                     ${typeof themeToggleMarkup === 'function' ? themeToggleMarkup() : ''}
                 </div>
                 <div id="auth-error-box" class="auth-error hidden"></div>
-                <input id="login-email" class="form-input" placeholder="E-Mail" autocomplete="email" inputmode="email">
+                <input id="login-email" type="email" inputmode="email" autocomplete="email" class="form-input" placeholder="E-Mail" autocomplete="email" inputmode="email">
                 <input id="login-password" type="password" class="form-input" placeholder="Passwort" autocomplete="current-password" onkeydown="if(event.key==='Enter') login()">
                 <button id="login-button" class="btn btn-accent" onclick="login()">Anmelden</button>
                 <button class="btn btn-outline" onclick="showRegister()" style="margin-top:8px">Registrieren</button>
@@ -112,7 +196,7 @@ function showRegister() {
                 </div>
                 <div id="auth-error-box" class="auth-error hidden"></div>
                 <input id="reg-name" class="form-input" placeholder="Name" autocomplete="name">
-                <input id="reg-email" class="form-input" placeholder="E-Mail" autocomplete="email" inputmode="email">
+                <input id="reg-email" type="email" inputmode="email" autocomplete="email" class="form-input" placeholder="E-Mail" autocomplete="email" inputmode="email">
                 <input id="reg-password" type="password" class="form-input" placeholder="Passwort" autocomplete="new-password">
                 <input id="reg-birthdate" type="date" class="form-input">
         <label class="privacy-check">
@@ -127,7 +211,7 @@ function showRegister() {
 }
 
 async function login() {
-    const e = document.getElementById('login-email')?.value.trim();
+    const e = normalizeEmail(document.getElementById('login-email')?.value).trim();
     const p = document.getElementById('login-password')?.value;
     const btn = document.getElementById('login-button');
     clearInlineAuthError();
@@ -146,7 +230,7 @@ async function login() {
 
 async function register() {
     const n = document.getElementById('reg-name')?.value.trim();
-    const e = document.getElementById('reg-email')?.value.trim();
+    const e = normalizeEmail(document.getElementById('reg-email')?.value).trim();
     const p = document.getElementById('reg-password')?.value;
     const b = document.getElementById('reg-birthdate')?.value;
     const btn = document.getElementById('register-button');
@@ -158,8 +242,9 @@ async function register() {
         if (btn) { btn.disabled = true; btn.textContent = 'Wird registriert...'; }
         await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
         const r = await auth.createUserWithEmailAndPassword(e, p);
+        await r.user.sendEmailVerification().catch(() => {});
         await ensureUserProfile(r.user, { name: n, email: e, age });
-        showToast('Registriert');
+        showToast('Registriert. Bitte E-Mail-Postfach prüfen.');
     } catch(err) {
         showInlineAuthError(getAuthErrorMessage(err));
     } finally {
