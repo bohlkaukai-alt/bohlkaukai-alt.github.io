@@ -317,3 +317,145 @@ function bindAuthListener() {
         }
     });
 }
+
+
+
+// ---------- Passwort vergessen ----------
+function getPasswordResetUrl() {
+    const basePath = location.pathname.replace(/\/[^\/]*$/, '/');
+    return location.origin + basePath + 'passwort-zuruecksetzen.html';
+}
+
+function showForgotPassword() {
+    const currentEmail = document.getElementById('login-email')?.value || '';
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h2>Passwort vergessen?</h2>
+            <p class="small-muted" style="margin:8px 0 12px">
+                Gib deine registrierte E-Mail-Adresse ein. Du bekommst dann eine E-Mail mit einem Link zum Ändern deines Passworts.
+            </p>
+            <input id="reset-email" type="email" inputmode="email" autocomplete="email" class="form-input" placeholder="E-Mail-Adresse" value="${escapeHtml(currentEmail)}">
+            <button id="reset-mail-btn" class="btn btn-primary" onclick="sendPasswordReset()">Passwort-Link senden</button>
+            <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">Abbrechen</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    setTimeout(() => document.getElementById('reset-email')?.focus(), 80);
+}
+
+async function sendPasswordReset() {
+    let email = normalizeEmail(document.getElementById('reset-email')?.value || '');
+    const btn = document.getElementById('reset-mail-btn');
+
+    const emailCheck = validateEmailStrict(email);
+    if (!emailCheck.valid) {
+        showEmailValidationError(emailCheck.message);
+        const input = document.getElementById('reset-email');
+        if (input) input.focus();
+        return;
+    }
+    email = emailCheck.email;
+
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Wird gesendet...';
+    }
+
+    try {
+        await auth.sendPasswordResetEmail(email, {
+            url: getPasswordResetUrl(),
+            handleCodeInApp: true
+        });
+        document.querySelector('.modal-overlay')?.remove();
+        showToast('E-Mail zum Zurücksetzen wurde gesendet.');
+    } catch (err) {
+        let msg = 'E-Mail konnte nicht gesendet werden.';
+        if (err.code === 'auth/user-not-found') msg = 'Zu dieser E-Mail wurde kein Account gefunden.';
+        if (err.code === 'auth/too-many-requests') msg = 'Zu viele Versuche. Bitte später erneut versuchen.';
+        if (err.code === 'auth/invalid-email') msg = 'Diese E-Mail-Adresse ist ungültig.';
+        showToast(msg);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Passwort-Link senden';
+        }
+    }
+}
+
+
+
+// ---------- Passwort-Empfehlungen ----------
+function getPasswordChecks(password) {
+    const pw = String(password || '');
+    return {
+        length: pw.length >= 8,
+        upper: /[A-ZÄÖÜ]/.test(pw),
+        lower: /[a-zäöüß]/.test(pw),
+        number: /[0-9]/.test(pw),
+        special: /[^A-Za-zÄÖÜäöüß0-9]/.test(pw)
+    };
+}
+
+function isStrongPassword(password) {
+    const c = getPasswordChecks(password);
+    return c.length && c.upper && c.lower && c.number && c.special;
+}
+
+function passwordHintMarkup(inputId) {
+    return `<div class="password-hint" data-password-hint-for="${inputId}">
+        <strong>Passwort sollte enthalten:</strong>
+        <ul>
+            <li data-check="length">Mindestens 8 Zeichen</li>
+            <li data-check="upper">Mindestens 1 Großbuchstabe</li>
+            <li data-check="lower">Mindestens 1 Kleinbuchstabe</li>
+            <li data-check="number">Mindestens 1 Zahl</li>
+            <li data-check="special">Mindestens 1 Sonderzeichen</li>
+        </ul>
+    </div>`;
+}
+
+function ensurePasswordHint(input) {
+    if (!input || !input.id) return;
+    let hint = document.querySelector(`[data-password-hint-for="${input.id}"]`);
+    if (!hint) {
+        input.insertAdjacentHTML('afterend', passwordHintMarkup(input.id));
+        hint = document.querySelector(`[data-password-hint-for="${input.id}"]`);
+    }
+    updatePasswordHint(input);
+}
+
+function updatePasswordHint(input) {
+    if (!input || !input.id) return;
+    const hint = document.querySelector(`[data-password-hint-for="${input.id}"]`);
+    if (!hint) return;
+
+    const checks = getPasswordChecks(input.value);
+    Object.keys(checks).forEach(key => {
+        const li = hint.querySelector(`[data-check="${key}"]`);
+        if (li) li.classList.toggle('valid', !!checks[key]);
+    });
+
+    hint.classList.toggle('complete', isStrongPassword(input.value));
+}
+
+function bindPasswordRecommendationFields(scope = document) {
+    const fields = scope.querySelectorAll('#reg-password, #new-password, #new-password-repeat, input[type="password"]');
+    fields.forEach(input => {
+        if (input.__passwordHintBound) return;
+        input.__passwordHintBound = true;
+        input.setAttribute('autocomplete', input.id === 'login-password' ? 'current-password' : 'new-password');
+        input.addEventListener('focus', () => ensurePasswordHint(input));
+        input.addEventListener('input', () => updatePasswordHint(input));
+        input.addEventListener('blur', () => {
+            const hint = document.querySelector(`[data-password-hint-for="${input.id}"]`);
+            if (hint && !input.value) hint.classList.remove('complete');
+        });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => bindPasswordRecommendationFields());
+
+const passwordHintObserver = new MutationObserver(() => bindPasswordRecommendationFields());
+passwordHintObserver.observe(document.documentElement, { childList: true, subtree: true });
