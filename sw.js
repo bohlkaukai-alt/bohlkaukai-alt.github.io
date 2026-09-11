@@ -1,4 +1,4 @@
-const CACHE_NAME = 'minijob-finder-v9';
+const CACHE_NAME = 'minijob-finder-v7';
 const CORE_ASSETS = [
   './',
   './index.html',
