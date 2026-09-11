@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passwort zurücksetzen – MiniJob Finder</title>
+    <meta name="theme-color" content="#2563EB">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <script>
+    // ---------- Passwort-Empfehlungen Reset ----------
+
+    
+    // ---------- Passwort-Empfehlungen ----------
+    function getPasswordChecks(password) {
+        const pw = String(password || '');
+        return {
+            length: pw.length >= 8,
+            upper: /[A-ZÄÖÜ]/.test(pw),
+            lower: /[a-zäöüß]/.test(pw),
+            number: /[0-9]/.test(pw),
+            special: /[^A-Za-zÄÖÜäöüß0-9]/.test(pw)
+        };
+    }
+    
+    function isStrongPassword(password) {
+        const c = getPasswordChecks(password);
+        return c.length && c.upper && c.lower && c.number && c.special;
+    }
+    
+    function passwordHintMarkup(inputId) {
+        return `<div class="password-hint" data-password-hint-for="${inputId}">
+            <strong>Passwort sollte enthalten:</strong>
+            <ul>
+                <li data-check="length">Mindestens 8 Zeichen</li>
+                <li data-check="upper">Mindestens 1 Großbuchstabe</li>
+                <li data-check="lower">Mindestens 1 Kleinbuchstabe</li>
+                <li data-check="number">Mindestens 1 Zahl</li>
+                <li data-check="special">Mindestens 1 Sonderzeichen</li>
+            </ul>
+        </div>`;
+    }
+    
+    function ensurePasswordHint(input) {
+        if (!input || !input.id) return;
+        let hint = document.querySelector(`[data-password-hint-for="${input.id}"]`);
+        if (!hint) {
+            input.insertAdjacentHTML('afterend', passwordHintMarkup(input.id));
+            hint = document.querySelector(`[data-password-hint-for="${input.id}"]`);
+        }
+        updatePasswordHint(input);
+    }
+    
+    function updatePasswordHint(input) {
+        if (!input || !input.id) return;
+        const hint = document.querySelector(`[data-password-hint-for="${input.id}"]`);
+        if (!hint) return;
+    
+        const checks = getPasswordChecks(input.value);
+        Object.keys(checks).forEach(key => {
+            const li = hint.querySelector(`[data-check="${key}"]`);
+            if (li) li.classList.toggle('valid', !!checks[key]);
+        });
+    
+        hint.classList.toggle('complete', isStrongPassword(input.value));
+    }
+    
+    function bindPasswordRecommendationFields(scope = document) {
+        const fields = scope.querySelectorAll('#reg-password, #new-password, #new-password-repeat, input[type="password"]');
+        fields.forEach(input => {
+            if (input.__passwordHintBound) return;
+            input.__passwordHintBound = true;
+            input.setAttribute('autocomplete', input.id === 'login-password' ? 'current-password' : 'new-password');
+            input.addEventListener('focus', () => ensurePasswordHint(input));
+            input.addEventListener('input', () => updatePasswordHint(input));
+            input.addEventListener('blur', () => {
+                const hint = document.querySelector(`[data-password-hint-for="${input.id}"]`);
+                if (hint && !input.value) hint.classList.remove('complete');
+            });
+        });
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => bindPasswordRecommendationFields());
+    
+    const passwordHintObserver = new MutationObserver(() => bindPasswordRecommendationFields());
+    passwordHintObserver.observe(document.documentElement, { childList: true, subtree: true });
+    
+        (function () {
+            try {
+                var theme = localStorage.getItem('app_theme') || 'light';
+                document.documentElement.setAttribute('data-theme', theme);
+                document.addEventListener('DOMContentLoaded', function () {
+                    document.body.setAttribute('data-theme', theme);
+                });
+            } catch (e) {}
+        })();
+    </script>
+</head>
+<body data-theme="light" data-device="desktop">
+<main class="legal-page reset-password-page">
+    <section class="legal-card reset-password-card">
+        <a class="legal-back" href="index.html">← Zurück zur App</a>
+        <h1>Passwort zurücksetzen</h1>
+        <p id="reset-info" class="small-muted">
+            Gib dein neues Passwort ein. Der Link aus der E-Mail wird automatisch geprüft.
+        </p>
+
+        <div id="reset-form">
+            <input id="new-password" class="form-input" type="password" minlength="8" autocomplete="new-password" placeholder="Neues Passwort, mindestens 8 Zeichen">
+            <input id="new-password-repeat" class="form-input" type="password" minlength="8" autocomplete="new-password" placeholder="Neues Passwort wiederholen">
+            <button id="reset-submit" class="btn btn-primary" onclick="confirmNewPassword()">Passwort ändern</button>
+        </div>
+
+        <div id="reset-success" class="hidden">
+            <div class="empty-state">
+                <h2>Passwort geändert</h2>
+                <p>Du kannst dich jetzt mit deinem neuen Passwort anmelden.</p>
+                <a class="btn btn-accent" href="index.html">Zur Anmeldung</a>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script>
+    window.MINIJOB_FIREBASE_CONFIG = {
+        apiKey: "AIzaSyBx57dh1O6NoLahmoYFSm0byLzzyKJKhj8",
+        authDomain: "minijob-41400.firebaseapp.com",
+        projectId: "minijob-41400",
+        storageBucket: "minijob-41400.firebasestorage.app",
+        messagingSenderId: "910969132661",
+        appId: "1:910969132661:web:1507192ed39cd897db4a3c"
+    };
+    firebase.initializeApp(window.MINIJOB_FIREBASE_CONFIG);
+    const auth = firebase.auth();
+
+    function getParam(name) {
+        return new URLSearchParams(window.location.search).get(name);
+    }
+
+    function showResetError(message) {
+        const info = document.getElementById('reset-info');
+        if (info) {
+            info.className = 'auth-error';
+            info.textContent = message;
+        }
+    }
+
+    const mode = getParam('mode');
+    const oobCode = getParam('oobCode');
+
+    document.addEventListener('DOMContentLoaded', async function () {
+        if (mode !== 'resetPassword' || !oobCode) {
+            showResetError('Der Passwort-Link ist ungültig oder unvollständig. Bitte fordere einen neuen Link an.');
+            document.getElementById('reset-form')?.classList.add('hidden');
+            return;
+        }
+
+        try {
+            const email = await auth.verifyPasswordResetCode(oobCode);
+            document.getElementById('reset-info').textContent = 'Neues Passwort für: ' + email;
+        } catch (err) {
+            showResetError('Der Passwort-Link ist abgelaufen oder ungültig. Bitte fordere einen neuen Link an.');
+            document.getElementById('reset-form')?.classList.add('hidden');
+        }
+    });
+
+    async function confirmNewPassword() {
+        const pw1 = document.getElementById('new-password')?.value || '';
+        const pw2 = document.getElementById('new-password-repeat')?.value || '';
+        const btn = document.getElementById('reset-submit');
+
+        if (!isStrongPassword(pw1)) {
+            showResetError('Das neue Passwort muss mindestens 8 Zeichen, einen Großbuchstaben, einen Kleinbuchstaben, eine Zahl und ein Sonderzeichen enthalten.');
+            ensurePasswordHint(document.getElementById('new-password'));
+            return;
+        }
+
+        if (pw1.length < 8) {
+            showResetError('Das neue Passwort muss mindestens 8 Zeichen haben.');
+            return;
+        }
+
+        if (pw1 !== pw2) {
+            showResetError('Die Passwörter stimmen nicht überein.');
+            return;
+        }
+
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Wird geändert...';
+        }
+
+        try {
+            await auth.confirmPasswordReset(oobCode, pw1);
+            document.getElementById('reset-form')?.classList.add('hidden');
+            document.getElementById('reset-success')?.classList.remove('hidden');
+            document.getElementById('reset-info').className = 'small-muted';
+            document.getElementById('reset-info').textContent = 'Dein Passwort wurde erfolgreich geändert.';
+        } catch (err) {
+            showResetError('Passwort konnte nicht geändert werden: ' + (err.message || err));
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Passwort ändern';
+            }
+        }
+    }
+</script>
+</body>
+</html>
